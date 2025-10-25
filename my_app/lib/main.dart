@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'modules/kecap/views/apify_view.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Load file .env sebelum runApp()
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
 
