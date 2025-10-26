@@ -21,13 +21,13 @@ class ApifyController extends GetxController {
   final RxDouble avgHttpTime = 0.0.obs;
   final RxDouble avgDioTime = 0.0.obs;
 
-  // ✨ NEW: Store API data untuk ditampilkan di catalog
+  // ✨ NEW: Store API data untuk ditampilkan di catalog  
   final RxList<dynamic> apiProducts = <dynamic>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    print('🚀 ApifyController initialized');
+    print('ApifyController initialized');
   }
 
   // ==========================================
@@ -104,7 +104,7 @@ class ApifyController extends GetxController {
           apiProducts.value = chainedRes.result!.items!;
         }
 
-        lastStatus.value = chainedRes.result?.status ?? 'unknown';
+        lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
         print('✅ Chained request completed: ${lastStatus.value}');
       } else {
         print('⚠️ First request failed, skipping chained request');
@@ -196,7 +196,7 @@ class ApifyController extends GetxController {
         .then((chainedRes) {
           logs.add(_toLog('HTTP (chained callback)', chainedRes));
           _updateStats(chainedRes, 'http');
-          lastStatus.value = chainedRes.result?.status ?? 'unknown';
+          lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
           print('✅ Chained callback completed: ${lastStatus.value}');
 
           // 🔥 SIMPAN DATA

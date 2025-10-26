@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/api_result.dart';
 import '../models/apify_result.dart';
@@ -8,13 +7,13 @@ import 'api_service.dart';
 import '/utils/constants.dart';
 
 class HttpService implements ApiService {
-  // Method untuk POST request dengan input
+  // GET request dengan input (tidak dipakai body karena pakai GET)
   Future<ApiResult> runActorWithInput(Map<String, dynamic> input) async {
     print('\n╔════════════════════════════════════════════════════════════');
-    print('║ 🌐 HTTP SERVICE REQUEST (POST with Input)');
+    print('║ 🌐 HTTP SERVICE REQUEST (GET with Input)');
     print('╠════════════════════════════════════════════════════════════');
-    print('║ URL: ${AppConstants.runActorUrl}');
-    print('║ Method: POST');
+    print('║ URL: ${AppConstants.apiUrl}');
+    print('║ Method: GET');
     print('║ Library: http package');
     print('║ Input: ${jsonEncode(input)}');
     print('╚════════════════════════════════════════════════════════════\n');
@@ -22,10 +21,9 @@ class HttpService implements ApiService {
     final stopwatch = Stopwatch()..start();
 
     try {
-      final response = await http.post(
-        Uri.parse(AppConstants.runActorUrl),
+      final response = await http.get(
+        Uri.parse(AppConstants.apiUrl),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(input),
       );
       stopwatch.stop();
 
@@ -33,45 +31,23 @@ class HttpService implements ApiService {
       final bytes = body.length;
 
       print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ✅ HTTP RESPONSE (POST)');
+      print('║ ✅ HTTP RESPONSE (GET)');
       print('╠════════════════════════════════════════════════════════════');
       print('║ Status Code: ${response.statusCode}');
       print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
       print(
-        '║ Response Size: $bytes bytes (${(bytes / 1024).toStringAsFixed(2)} KB)',
-      );
+          '║ Response Size: $bytes bytes (${(bytes / 1024).toStringAsFixed(2)} KB)');
       print('╚════════════════════════════════════════════════════════════\n');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         try {
           final data = jsonDecode(body);
-          print('✅ Actor run started: ${data['data']?['id']}');
-          print('   - Status: ${data['data']?['status']}');
 
-          // Wait for run to complete, then fetch dataset
-          final runId = data['data']?['id'];
-          if (runId != null) {
-            print('⏳ Waiting for actor to finish...');
-            // Wait for run completion with polling
-            final completed = await _waitForRunCompletion(
-              runId,
-              timeout: const Duration(seconds: 60),
-              interval: const Duration(seconds: 3),
-            );
-            if (completed) {
-              return await fetchDatasetItems(runId);
-            } else {
-              return ApiResult(
-                result: null,
-                statusCode: 202,
-                durationMs: stopwatch.elapsedMilliseconds,
-                responseBytes: bytes,
-                error: 'Run did not complete within timeout',
-              );
-            }
-          }
-
+          // langsung parse ke ApifyResult
           final apifyData = ApifyResult.fromJson(data);
+          print('✅ JSON parsed successfully');
+          print('   - Items count: ${apifyData.items.length}');
+
           return ApiResult(
             result: apifyData,
             statusCode: response.statusCode,
@@ -99,7 +75,7 @@ class HttpService implements ApiService {
       }
     } catch (e) {
       stopwatch.stop();
-      print('❌ HTTP POST Error: $e');
+      print('❌ HTTP GET Error: $e');
       return ApiResult(
         result: null,
         statusCode: 0,
@@ -110,9 +86,9 @@ class HttpService implements ApiService {
     }
   }
 
-  // Method untuk fetch dataset items (hasil scraping)
+  // fetch dataset items
   Future<ApiResult> fetchDatasetItems(String runId) async {
-    final url = AppConstants.getDatasetUrl(runId);
+    final url = AppConstants.apiUrl;
     print('\n📦 Fetching dataset items from run: $runId');
     print('   URL: $url\n');
 
@@ -126,75 +102,16 @@ class HttpService implements ApiService {
       final bytes = body.length;
 
       if (response.statusCode == 200) {
-        final List<dynamic> items = jsonDecode(body);
-        print('✅ Dataset fetched: ${items.length} items');
+        final data = jsonDecode(body);
+        final apifyData = ApifyResult.fromJson(data);
+        print('✅ Dataset fetched: ${apifyData.items.length} items');
 
-        if (items.isNotEmpty) {
-          final apifyData = ApifyResult(
-            id: runId,
-            status: 'SUCCEEDED',
-            items: items,
-            data: {'items': items},
-          );
-
-          return ApiResult(
-            result: apifyData,
-            statusCode: response.statusCode,
-            durationMs: stopwatch.elapsedMilliseconds,
-            responseBytes: bytes,
-          );
-        }
-
-        // If empty, fallthrough to try getting dataset by defaultDatasetId
-        print('   - Dataset empty, will try run details to find dataset id');
-      } else if (response.statusCode == 404) {
-        print(
-          '   - Dataset URL returned 404, will try run details to find dataset id',
+        return ApiResult(
+          result: apifyData,
+          statusCode: response.statusCode,
+          durationMs: stopwatch.elapsedMilliseconds,
+          responseBytes: bytes,
         );
-      } else {
-        print('   - Dataset fetch returned ${response.statusCode}');
-      }
-
-      // Try run details to find defaultDatasetId
-      try {
-        final runUrl =
-            'https://api.apify.com/v2/acts/${AppConstants.actorId}/runs/$runId${AppConstants.tokenQuery}';
-        final runRes = await http.get(Uri.parse(runUrl));
-        if (runRes.statusCode == 200) {
-          final runBody = jsonDecode(runRes.body);
-          final datasetId =
-              runBody['data']?['defaultDatasetId'] ??
-              runBody['defaultDatasetId'];
-          if (datasetId != null) {
-            final datasetUrl = AppConstants.getDatasetById(datasetId);
-            print('   - Found datasetId: $datasetId, fetching $datasetUrl');
-            final dsRes = await http.get(Uri.parse(datasetUrl));
-            if (dsRes.statusCode == 200) {
-              final items = jsonDecode(dsRes.body) as List<dynamic>;
-              print('✅ Dataset by id fetched: ${items.length} items');
-              final apifyData = ApifyResult(
-                id: runId,
-                status: 'SUCCEEDED',
-                items: items,
-                data: {'items': items},
-              );
-              return ApiResult(
-                result: apifyData,
-                statusCode: 200,
-                durationMs: stopwatch.elapsedMilliseconds,
-                responseBytes: dsRes.body.length,
-              );
-            } else {
-              print('   - Dataset by id fetch returned ${dsRes.statusCode}');
-            }
-          } else {
-            print('   - defaultDatasetId not found in run details');
-          }
-        } else {
-          print('   - run details fetch returned ${runRes.statusCode}');
-        }
-      } catch (e) {
-        print('   - run details fetch error: $e');
       }
 
       return ApiResult(
@@ -241,8 +158,7 @@ class HttpService implements ApiService {
       print('║ Status Code: ${response.statusCode}');
       print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
       print(
-        '║ Response Size: $bytes bytes (${(bytes / 1024).toStringAsFixed(2)} KB)',
-      );
+          '║ Response Size: $bytes bytes (${(bytes / 1024).toStringAsFixed(2)} KB)');
       print('║ Content-Type: ${response.headers['content-type'] ?? 'unknown'}');
       print('╚════════════════════════════════════════════════════════════\n');
 
@@ -252,8 +168,7 @@ class HttpService implements ApiService {
           final apifyData = ApifyResult.fromJson(data);
 
           print('✅ JSON parsed successfully');
-          print('   - Status: ${apifyData.status}');
-          print('   - Items count: ${apifyData.items?.length ?? 0}');
+          print('   - Items count: ${apifyData.items.length}');
 
           return ApiResult(
             result: apifyData,
@@ -272,18 +187,7 @@ class HttpService implements ApiService {
           );
         }
       } else {
-        print(
-          '\n╔════════════════════════════════════════════════════════════',
-        );
-        print('║ ⚠️  HTTP RESPONSE ERROR');
-        print('╠════════════════════════════════════════════════════════════');
-        print('║ Status Code: ${response.statusCode}');
-        print('║ Error: HTTP Error ${response.statusCode}');
-        print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-        print(
-          '╚════════════════════════════════════════════════════════════\n',
-        );
-
+        print('⚠️  HTTP Error: ${response.statusCode}');
         return ApiResult(
           result: null,
           statusCode: response.statusCode,
@@ -292,84 +196,9 @@ class HttpService implements ApiService {
           error: 'HTTP Error: ${response.statusCode}',
         );
       }
-    } on SocketException catch (e) {
-      stopwatch.stop();
-      print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ❌ NETWORK ERROR');
-      print('╠════════════════════════════════════════════════════════════');
-      print('║ Error Type: No Internet Connection');
-      print('║ Details: ${e.message}');
-      print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-      print('╚════════════════════════════════════════════════════════════\n');
-
-      return ApiResult(
-        result: null,
-        statusCode: 0,
-        durationMs: stopwatch.elapsedMilliseconds,
-        responseBytes: 0,
-        error: 'No Internet Connection',
-      );
-    } on HttpException catch (e) {
-      stopwatch.stop();
-      print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ❌ HTTP EXCEPTION');
-      print('╠════════════════════════════════════════════════════════════');
-      print('║ Error Type: Invalid HTTP response');
-      print('║ Details: ${e.message}');
-      print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-      print('╚════════════════════════════════════════════════════════════\n');
-
-      return ApiResult(
-        result: null,
-        statusCode: 0,
-        durationMs: stopwatch.elapsedMilliseconds,
-        responseBytes: 0,
-        error: 'Invalid HTTP response',
-      );
-    } on FormatException catch (e) {
-      stopwatch.stop();
-      print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ❌ FORMAT EXCEPTION');
-      print('╠════════════════════════════════════════════════════════════');
-      print('║ Error Type: Invalid JSON format');
-      print('║ Details: ${e.message}');
-      print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-      print('╚════════════════════════════════════════════════════════════\n');
-
-      return ApiResult(
-        result: null,
-        statusCode: 0,
-        durationMs: stopwatch.elapsedMilliseconds,
-        responseBytes: 0,
-        error: 'Invalid JSON format',
-      );
-    } on TimeoutException catch (e) {
-      stopwatch.stop();
-      print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ❌ TIMEOUT ERROR');
-      print('╠════════════════════════════════════════════════════════════');
-      print('║ Error Type: Request Timeout');
-      print('║ Details: ${e.message}');
-      print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-      print('╚════════════════════════════════════════════════════════════\n');
-
-      return ApiResult(
-        result: null,
-        statusCode: 408,
-        durationMs: stopwatch.elapsedMilliseconds,
-        responseBytes: 0,
-        error: 'Request Timeout',
-      );
     } catch (e) {
       stopwatch.stop();
-      print('\n╔════════════════════════════════════════════════════════════');
-      print('║ ❌ UNEXPECTED ERROR');
-      print('╠════════════════════════════════════════════════════════════');
-      print('║ Error Type: Unknown');
-      print('║ Details: $e');
-      print('║ Duration: ${stopwatch.elapsedMilliseconds} ms');
-      print('╚════════════════════════════════════════════════════════════\n');
-
+      print('❌ UNEXPECTED ERROR: $e');
       return ApiResult(
         result: null,
         statusCode: 0,
@@ -380,8 +209,8 @@ class HttpService implements ApiService {
     }
   }
 
-  // Poll the run status until SUCCEEDED (or terminal) or timeout
-  Future<bool> _waitForRunCompletion(
+  // polling run completion (tidak dihapus karena masih bisa dipakai kalau endpoint-nya ada runId)
+  Future<bool> waitForRunCompletion(
     String runId, {
     required Duration timeout,
     required Duration interval,
@@ -390,7 +219,7 @@ class HttpService implements ApiService {
     while (DateTime.now().isBefore(end)) {
       try {
         final statusUrl =
-            'https://api.apify.com/v2/acts/${AppConstants.actorId}/runs/$runId${AppConstants.tokenQuery}';
+            'https://api.apify.com/v2/acts/${AppConstants.datasetId}/runs/$runId${AppConstants.tokenQuery}';
         final res = await http.get(Uri.parse(statusUrl));
         if (res.statusCode == 200) {
           final body = jsonDecode(res.body);
@@ -399,8 +228,7 @@ class HttpService implements ApiService {
           if (status == 'SUCCEEDED') return true;
           if (status == 'FAILED' ||
               status == 'ABORTED' ||
-              status == 'TERMINATED')
-            return false;
+              status == 'TERMINATED') return false;
         } else {
           print('   - Poll status returned ${res.statusCode}');
         }
