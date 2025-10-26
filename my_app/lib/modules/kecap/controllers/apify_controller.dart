@@ -12,66 +12,228 @@ class ApifyController extends GetxController {
   final RxList<Map<String, dynamic>> logs = <Map<String, dynamic>>[].obs;
   final RxBool loading = false.obs;
   final RxString lastStatus = ''.obs;
+  final RxString testMode = 'idle'.obs;
 
-  // Eksperimen Performa HTTP Library
-  Future<void> runComparison() async {
-    loading.value = true;
-    logs.clear();
+  // Stats
+  final RxInt totalTests = 0.obs;
+  final RxInt successCount = 0.obs;
+  final RxInt errorCount = 0.obs;
+  final RxDouble avgHttpTime = 0.0.obs;
+  final RxDouble avgDioTime = 0.0.obs;
 
-    final url = AppConstants.apiUrl;
+  // ✨ NEW: Store API data untuk ditampilkan di catalog
+  final RxList<dynamic> apiProducts = <dynamic>[].obs;
 
-    // HTTP (async–await)
-    final httpRes = await _httpService.fetchApifyData(url);
-    logs.add(_toLog('HTTP (async–await)', httpRes));
-
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // DIO (async–await)
-    final dioRes = await _dioService.fetchApifyData(url);
-    logs.add(_toLog('DIO (async–await)', dioRes));
-
-    lastStatus.value =
-        dioRes.result?.status ?? httpRes.result?.status ?? 'unknown';
-
-    loading.value = false;
+  @override
+  void onInit() {
+    super.onInit();
+    print('🚀 ApifyController initialized');
   }
 
-  // Callback Chaining
-  void runComparisonCallback() {
+  // ==========================================
+  // ASYNC-AWAIT VERSION (Clean & Readable)
+  // ==========================================
+  Future<void> runComparisonAsync() async {
     loading.value = true;
+    testMode.value = 'async';
     logs.clear();
 
-    final url = AppConstants.apiUrl;
+    print('\n========================================');
+    print('🔵 STARTING ASYNC-AWAIT TEST');
+    print('========================================\n');
 
-    final stopwatch = Stopwatch()..start();
+    try {
+      // Step 1: HTTP Request dengan INPUT
+      print('📤 [1/4] Fetching with HTTP (async-await) + Input...');
+      final httpRes = await (_httpService as HttpService).runActorWithInput(
+        AppConstants.defaultActorInput,
+      );
+      logs.add(_toLog('HTTP (async-await)', httpRes));
+      _updateStats(httpRes, 'http');
 
-    // Contoh chaining menggunakan HTTP service
-    _httpService.fetchApifyData(url).then((httpRes) {
-      stopwatch.stop();
-      logs.add(_toLog('HTTP (callback)', httpRes));
-      // Simulasi chained request (misal: ambil detail berdasarkan hasil pertama)
-      final nextUrl = url;
-      stopwatch.reset();
-      stopwatch.start();
-      return _dioService.fetchApifyData(nextUrl);
-    }).then((dioRes) {
-      stopwatch.stop();
-      logs.add(_toLog('DIO (callback)', dioRes));
-      lastStatus.value = dioRes.result?.status ?? 'unknown';
-    }).catchError((error) {
+      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts
+      if (httpRes.result?.items != null && httpRes.result!.items!.isNotEmpty) {
+        print(
+          '✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts',
+        );
+        apiProducts.value = httpRes.result!.items!;
+      } else {
+        print('⚠️  HTTP: Dataset kosong');
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Step 2: DIO Request dengan INPUT
+      print('📤 [2/4] Fetching with DIO (async-await) + Input...');
+      final dioRes = await (_dioService as DioService).runActorWithInput(
+        AppConstants.defaultActorInput,
+      );
+      logs.add(_toLog('DIO (async-await)', dioRes));
+      _updateStats(dioRes, 'dio');
+
+      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts (kalau HTTP gagal)
+      if (dioRes.result?.items != null && dioRes.result!.items!.isNotEmpty) {
+        print(
+          '✅ DIO: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts',
+        );
+        apiProducts.value = dioRes.result!.items!;
+      } else {
+        print('⚠️  DIO: Dataset kosong');
+      }
+
+      // Step 3: Chained Request (different query)
+      print('🔗 [3/4] Starting chained request with different query...');
+      if (httpRes.statusCode >= 200 && httpRes.statusCode < 300) {
+        print('✅ First request success, trying different query...');
+
+        final chainedInput = {'language': 'en', 'query': 'Sweet Soy Sauce'};
+
+        await Future.delayed(const Duration(milliseconds: 300));
+        final chainedRes = await (_dioService as DioService).runActorWithInput(
+          chainedInput,
+        );
+        logs.add(_toLog('DIO (chained)', chainedRes));
+        _updateStats(chainedRes, 'dio');
+
+        // 🔥 TAMBAHKAN INI: Update apiProducts kalau ada data baru
+        if (chainedRes.result?.items != null &&
+            chainedRes.result!.items!.isNotEmpty) {
+          print(
+            '✅ Chained: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts',
+          );
+          apiProducts.value = chainedRes.result!.items!;
+        }
+
+        lastStatus.value = chainedRes.result?.status ?? 'unknown';
+        print('✅ Chained request completed: ${lastStatus.value}');
+      } else {
+        print('⚠️ First request failed, skipping chained request');
+      }
+
+      print('\n========================================');
+      print('✅ ASYNC-AWAIT TEST COMPLETED');
+      print('📦 Total items in apiProducts: ${apiProducts.length}');
+      print('========================================\n');
+
+      totalTests.value = logs.length;
+    } catch (e) {
+      print('❌ ERROR in async test: $e');
+      errorCount.value++;
       logs.add({
-        'library': 'Callback Chain',
-        'status': 'error',
+        'library': 'Async Test',
+        'status': 'ERROR',
         'duration': '-',
         'bytes': '-',
-        'error': error.toString(),
+        'error': e.toString(),
       });
-    }).whenComplete(() {
+    } finally {
       loading.value = false;
-    });
+      testMode.value = 'idle';
+    }
   }
 
-  // Utility: Logging hasil
+  // ==========================================
+  // JUGA UPDATE runComparisonCallback()
+  // ==========================================
+
+  void runComparisonCallback() {
+    loading.value = true;
+    testMode.value = 'callback';
+    logs.clear();
+
+    print('\n========================================');
+    print('🟠 STARTING CALLBACK CHAINING TEST');
+    print('========================================\n');
+
+    final url = AppConstants.apiUrl;
+    final overallStopwatch = Stopwatch()..start();
+
+    print('📤 [1/4] Fetching with HTTP (callback) + Input...');
+
+    (_httpService as HttpService)
+        .runActorWithInput(AppConstants.defaultActorInput)
+        .then((httpRes) {
+          logs.add(_toLog('HTTP (callback)', httpRes));
+          _updateStats(httpRes, 'http');
+          print('✅ HTTP callback completed');
+
+          // 🔥 SIMPAN DATA
+          if (httpRes.result?.items != null &&
+              httpRes.result!.items!.isNotEmpty) {
+            print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items');
+            apiProducts.value = httpRes.result!.items!;
+          }
+
+          return Future.delayed(const Duration(milliseconds: 300)).then((_) {
+            print('📤 [2/4] Fetching with DIO (callback) + Input...');
+            return (_dioService as DioService).runActorWithInput(
+              AppConstants.defaultActorInput,
+            );
+          });
+        })
+        .then((dioRes) {
+          logs.add(_toLog('DIO (callback)', dioRes));
+          _updateStats(dioRes, 'dio');
+          print('✅ DIO callback completed');
+
+          // 🔥 SIMPAN DATA
+          if (dioRes.result?.items != null &&
+              dioRes.result!.items!.isNotEmpty) {
+            print('✅ DIO: Menyimpan ${dioRes.result!.items!.length} items');
+            apiProducts.value = dioRes.result!.items!;
+          }
+
+          if (dioRes.statusCode == 200 && dioRes.result != null) {
+            print('🔗 [3/4] Starting chained callback...');
+            return Future.delayed(const Duration(milliseconds: 200)).then((_) {
+              return _httpService.fetchApifyData(url);
+            });
+          } else {
+            print('⚠️ Skipping chained request due to error');
+            throw Exception('Previous request failed');
+          }
+        })
+        .then((chainedRes) {
+          logs.add(_toLog('HTTP (chained callback)', chainedRes));
+          _updateStats(chainedRes, 'http');
+          lastStatus.value = chainedRes.result?.status ?? 'unknown';
+          print('✅ Chained callback completed: ${lastStatus.value}');
+
+          // 🔥 SIMPAN DATA
+          if (chainedRes.result?.items != null &&
+              chainedRes.result!.items!.isNotEmpty) {
+            apiProducts.value = chainedRes.result!.items!;
+          }
+
+          overallStopwatch.stop();
+          print('\n========================================');
+          print('✅ CALLBACK TEST COMPLETED');
+          print('⏱️  Total time: ${overallStopwatch.elapsedMilliseconds}ms');
+          print('📦 Total items: ${apiProducts.length}');
+          print('========================================\n');
+
+          totalTests.value = logs.length;
+        })
+        .catchError((error) {
+          print('❌ ERROR in callback chain: $error');
+          errorCount.value++;
+          logs.add({
+            'library': 'Callback Chain',
+            'status': 'ERROR',
+            'duration': '-',
+            'bytes': '-',
+            'error': error.toString(),
+          });
+        })
+        .whenComplete(() {
+          loading.value = false;
+          testMode.value = 'idle';
+        });
+  }
+  // ==========================================
+  // HELPER METHODS
+  // ==========================================
+
   Map<String, dynamic> _toLog(String lib, ApiResult res) {
     return {
       'library': lib,
@@ -79,6 +241,49 @@ class ApifyController extends GetxController {
       'duration': '${res.durationMs} ms',
       'bytes': res.responseBytes,
       'error': res.error,
+      'hasData': res.result != null,
     };
+  }
+
+  void _updateStats(ApiResult res, String type) {
+    if (res.error == null) {
+      successCount.value++;
+
+      // Update average times
+      if (type == 'http') {
+        final current = avgHttpTime.value;
+        final count = logs
+            .where((l) => l['library'].toString().contains('HTTP'))
+            .length;
+        avgHttpTime.value = ((current * count) + res.durationMs) / (count + 1);
+      } else if (type == 'dio') {
+        final current = avgDioTime.value;
+        final count = logs
+            .where((l) => l['library'].toString().contains('DIO'))
+            .length;
+        avgDioTime.value = ((current * count) + res.durationMs) / (count + 1);
+      }
+    } else {
+      errorCount.value++;
+    }
+  }
+
+  void resetStats() {
+    logs.clear();
+    totalTests.value = 0;
+    successCount.value = 0;
+    errorCount.value = 0;
+    avgHttpTime.value = 0.0;
+    avgDioTime.value = 0.0;
+    lastStatus.value = '';
+    print('🔄 Stats reset');
+  }
+
+  String getSuccessRate() {
+    if (totalTests.value == 0) return '0%';
+    final rate = (successCount.value / totalTests.value * 100).toStringAsFixed(
+      1,
+    );
+    return '$rate%';
   }
 }
