@@ -10,6 +10,7 @@ class HttpService implements ApiService {
   @override
   Future<ApiResult> fetchApifyData(String url) async {
     final stopwatch = Stopwatch()..start();
+
     try {
       final response = await http.get(Uri.parse(AppConstants.apiUrl));
       stopwatch.stop();
@@ -18,8 +19,17 @@ class HttpService implements ApiService {
       final bytes = body.length;
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(body);
-        final apifyData = ApifyResult.fromJson(data);
+        final decoded = jsonDecode(body);
+        ApifyResult apifyData;
+
+        // ✅ Handle jika response berupa List, bukan Map
+        if (decoded is List) {
+          apifyData = ApifyResult(items: decoded);
+        } else if (decoded is Map<String, dynamic>) {
+          apifyData = ApifyResult.fromJson(decoded);
+        } else {
+          apifyData = ApifyResult(items: []);
+        }
 
         return ApiResult(
           result: apifyData,

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/apify_result.dart';
 import '../models/api_result.dart';
-import '../../../../utils/constants.dart';
 import 'api_service.dart';
 
 class DioService implements ApiService {
@@ -16,7 +15,7 @@ class DioService implements ApiService {
       error: true,
     ));
 
-    // Interceptor tambahan untuk custom print
+    // Interceptor tambahan untuk custom print log ringkas
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         print('🚀 DIO REQUEST => ${options.method} ${options.uri}');
@@ -37,10 +36,22 @@ class DioService implements ApiService {
   Future<ApiResult> fetchApifyData(String url) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final response = await _dio.get(AppConstants.apiUrl);
+      // Gunakan URL dari parameter
+      final response = await _dio.get(url);
       stopwatch.stop();
 
-      final data = ApifyResult.fromJson(response.data);
+      dynamic raw = response.data;
+      ApifyResult data;
+
+      // Apify API mengembalikan array JSON
+      if (raw is List) {
+        data = ApifyResult(items: raw);
+      } else if (raw is Map<String, dynamic>) {
+        data = ApifyResult.fromJson(raw);
+      } else {
+        data = ApifyResult(items: []);
+      }
+
       final bytes = response.data.toString().length;
 
       return ApiResult(

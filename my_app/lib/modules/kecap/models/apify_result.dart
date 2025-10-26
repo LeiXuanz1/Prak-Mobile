@@ -1,32 +1,25 @@
 class ApifyResult {
-  final String? id;
-  final String? actId;
-  final String? status;
-  final dynamic data;
-  final List<dynamic>? items;
+  final List<dynamic> items;
 
-  ApifyResult({
-    this.id,
-    this.actId,
-    this.status,
-    this.data,
-    this.items,
-  });
+  ApifyResult({required this.items});
 
-  factory ApifyResult.fromJson(Map<String, dynamic> json) {
-    // Apify biasanya balikin data di bawah field 'data'
-    final data = json['data'] ?? {};
-    return ApifyResult(
-      id: data['id'] ?? '',
-      actId: data['actId'] ?? '',
-      status: data['status'] ?? '',
-      data: data,
-      // beberapa run Apify mengembalikan 'items' dalam 'data' atau 'output'
-      items: (data['items'] != null && data['items'] is List)
-          ? List<dynamic>.from(data['items'])
-          : (data['output']?['items'] != null
-              ? List<dynamic>.from(data['output']['items'])
-              : []),
-    );
+  factory ApifyResult.fromJson(dynamic json) {
+    // Jika respons-nya berupa list langsung (bukan map)
+    if (json is List) {
+      return ApifyResult(items: json);
+    }
+
+    // Jika respons-nya object (map) dengan field data/output/items
+    if (json is Map<String, dynamic>) {
+      final data = json['data'] ?? json['output'] ?? {};
+      final items = (data['items'] ?? data) is List
+          ? List<dynamic>.from(data['items'] ?? data)
+          : [];
+
+      return ApifyResult(items: items);
+    }
+
+    // Default: tidak ada data
+    return ApifyResult(items: []);
   }
 }
