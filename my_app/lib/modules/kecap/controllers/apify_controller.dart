@@ -53,13 +53,32 @@ class ApifyController extends GetxController {
 
       // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts
       if (httpRes.result?.items != null && httpRes.result!.items!.isNotEmpty) {
-        print(
-          '✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts',
-        );
-        apiProducts.value = httpRes.result!.items!;
-      } else {
+        print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts');
+
+        apiProducts.value = httpRes.result!.items!.map((item) {
+        final categories = item['categories'];
+        String category = '-';
+        try {
+          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
+        } catch (_) {}
+
+        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
+        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
+
+        return {
+          'id': item['id'] ?? '-',
+          'title': item['display_name'] ?? '-',
+          'category': category,
+          'price': price,
+          'stock': stock,
+          'thumbnail': item['thumbnail'],
+          'status': stock > 20 ? 'Available' : 'Low Stock',
+          'url': item['share_url'],
+        };
+      }).toList();
+    } else {
         print('⚠️  HTTP: Dataset kosong');
-      }
+    }
 
       await Future.delayed(const Duration(milliseconds: 500));
 
@@ -73,13 +92,33 @@ class ApifyController extends GetxController {
 
       // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts (kalau HTTP gagal)
       if (dioRes.result?.items != null && dioRes.result!.items!.isNotEmpty) {
-        print(
-          '✅ DIO: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts',
-        );
-        apiProducts.value = dioRes.result!.items!;
-      } else {
-        print('⚠️  DIO: Dataset kosong');
-      }
+        print('✅ HTTP: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts');
+
+        apiProducts.value = dioRes.result!.items!.map((item) {
+        final categories = item['categories'];
+        String category = '-';
+        try {
+          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
+        } catch (_) {}
+
+        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
+        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
+
+        return {
+          'id': item['id'] ?? '-',
+          'title': item['display_name'] ?? '-',
+          'category': category,
+          'price': price,
+          'stock': stock,
+          'thumbnail': item['thumbnail'],
+          'status': stock > 20 ? 'Available' : 'Low Stock',
+          'url': item['share_url'],
+        };
+      }).toList();
+    } else {
+        print('⚠️  HTTP: Dataset kosong');
+    }
+
 
       // Step 3: Chained Request (different query)
       print('🔗 [3/4] Starting chained request with different query...');
@@ -96,13 +135,34 @@ class ApifyController extends GetxController {
         _updateStats(chainedRes, 'dio');
 
         // 🔥 TAMBAHKAN INI: Update apiProducts kalau ada data baru
-        if (chainedRes.result?.items != null &&
-            chainedRes.result!.items!.isNotEmpty) {
-          print(
-            '✅ Chained: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts',
-          );
-          apiProducts.value = chainedRes.result!.items!;
-        }
+        if (chainedRes.result?.items != null && chainedRes.result!.items!.isNotEmpty) {
+          print('✅ HTTP: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts');
+
+          apiProducts.value = chainedRes.result!.items!.map((item) {
+          final categories = item['categories'];
+          String category = '-';
+          try {
+            category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
+          } catch (_) {}
+
+          final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
+          final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
+
+          return {
+            'id': item['id'] ?? '-',
+            'title': item['display_name'] ?? '-',
+            'category': category,
+            'price': price,
+            'stock': stock,
+            'thumbnail': item['thumbnail'],
+            'status': stock > 20 ? 'Available' : 'Low Stock',
+            'url': item['share_url'],
+          };
+        }).toList();
+      } else {
+        print('⚠️  HTTP: Dataset kosong');
+      }
+
 
         lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
         print('✅ Chained request completed: ${lastStatus.value}');
