@@ -165,10 +165,8 @@ class DynamicProductCard extends StatelessWidget {
     );
   }
 
-  // ==========================================
   // DYNAMIC DATA EXTRACTION
   // Auto-detect berbagai kemungkinan field names
-  // ==========================================
 
   String? _extractImageUrl() {
     // Cek berbagai kemungkinan field untuk image
@@ -317,9 +315,7 @@ class DynamicProductCard extends StatelessWidget {
   }
 }
 
-// ==========================================
 // EXAMPLE USAGE IN YOUR VIEW
-// ==========================================
 
 class ProductCatalogExample extends StatelessWidget {
   const ProductCatalogExample({super.key});

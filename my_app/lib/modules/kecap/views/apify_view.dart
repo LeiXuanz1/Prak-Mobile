@@ -332,9 +332,7 @@ class ApifyView extends StatelessWidget {
     });
   }
 
-  // ==========================================
   // PRODUCT CATALOG SECTION
-  // ==========================================
   Widget _buildProductCatalog(
     ApifyController controller,
     bool isTablet,

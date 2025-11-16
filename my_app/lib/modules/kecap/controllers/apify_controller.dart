@@ -21,18 +21,16 @@ class ApifyController extends GetxController {
   final RxDouble avgHttpTime = 0.0.obs;
   final RxDouble avgDioTime = 0.0.obs;
 
-  // ✨ NEW: Store API data untuk ditampilkan di catalog  
-  final RxList<dynamic> apiProducts = <dynamic>[].obs;
+  // ✨ Data untuk UI
+  final RxList<Map<String, dynamic>> apiProducts = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    print('ApifyController initialized');
+    print('ApifyController initialized ✅');
   }
 
-  // ==========================================
-  // ASYNC-AWAIT VERSION (Clean & Readable)
-  // ==========================================
+  // ASYNC-AWAIT VERSION
   Future<void> runComparisonAsync() async {
     loading.value = true;
     testMode.value = 'async';
@@ -43,7 +41,7 @@ class ApifyController extends GetxController {
     print('========================================\n');
 
     try {
-      // Step 1: HTTP Request dengan INPUT
+      // Step 1: HTTP Request
       print('📤 [1/4] Fetching with HTTP (async-await) + Input...');
       final httpRes = await (_httpService as HttpService).runActorWithInput(
         AppConstants.defaultActorInput,
@@ -51,38 +49,16 @@ class ApifyController extends GetxController {
       logs.add(_toLog('HTTP (async-await)', httpRes));
       _updateStats(httpRes, 'http');
 
-      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts
-      if (httpRes.result?.items != null && httpRes.result!.items!.isNotEmpty) {
-        print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts');
-
-        apiProducts.value = httpRes.result!.items!.map((item) {
-        final categories = item['categories'];
-        String category = '-';
-        try {
-          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
-        } catch (_) {}
-
-        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
-
-        return {
-          'id': item['id'] ?? '-',
-          'title': item['display_name'] ?? '-',
-          'category': category,
-          'price': price,
-          'stock': stock,
-          'thumbnail': item['thumbnail'],
-          'status': stock > 20 ? 'Available' : 'Low Stock',
-          'url': item['share_url'],
-        };
-      }).toList();
-    } else {
-        print('⚠️  HTTP: Dataset kosong');
-    }
+      if (_hasData(httpRes)) {
+        apiProducts.value = _mapItems(httpRes.result!.items!);
+        print('✅ HTTP: ${apiProducts.length} items disimpan');
+      } else {
+        print('⚠️ HTTP dataset kosong');
+      }
 
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Step 2: DIO Request dengan INPUT
+      // Step 2: DIO Request
       print('📤 [2/4] Fetching with DIO (async-await) + Input...');
       final dioRes = await (_dioService as DioService).runActorWithInput(
         AppConstants.defaultActorInput,
@@ -90,112 +66,51 @@ class ApifyController extends GetxController {
       logs.add(_toLog('DIO (async-await)', dioRes));
       _updateStats(dioRes, 'dio');
 
-      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts (kalau HTTP gagal)
-      if (dioRes.result?.items != null && dioRes.result!.items!.isNotEmpty) {
-        print('✅ HTTP: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts');
+      if (_hasData(dioRes)) {
+        apiProducts.value = _mapItems(dioRes.result!.items!);
+        print('✅ DIO: ${apiProducts.length} items disimpan');
+      } else {
+        print('⚠️ DIO dataset kosong');
+      }
 
-        apiProducts.value = dioRes.result!.items!.map((item) {
-        final categories = item['categories'];
-        String category = '-';
-        try {
-          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
-        } catch (_) {}
-
-        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
-
-        return {
-          'id': item['id'] ?? '-',
-          'title': item['display_name'] ?? '-',
-          'category': category,
-          'price': price,
-          'stock': stock,
-          'thumbnail': item['thumbnail'],
-          'status': stock > 20 ? 'Available' : 'Low Stock',
-          'url': item['share_url'],
-        };
-      }).toList();
-    } else {
-        print('⚠️  HTTP: Dataset kosong');
-    }
-
-
-      // Step 3: Chained Request (different query)
+      // Step 3: Chained Request
       print('🔗 [3/4] Starting chained request with different query...');
-      if (httpRes.statusCode >= 200 && httpRes.statusCode < 300) {
-        print('✅ First request success, trying different query...');
-
+      if (httpRes.statusCode == 200) {
         final chainedInput = {'language': 'en', 'query': 'Sweet Soy Sauce'};
-
         await Future.delayed(const Duration(milliseconds: 300));
-        final chainedRes = await (_dioService as DioService).runActorWithInput(
-          chainedInput,
-        );
+        final chainedRes =
+            await (_dioService as DioService).runActorWithInput(chainedInput);
         logs.add(_toLog('DIO (chained)', chainedRes));
         _updateStats(chainedRes, 'dio');
 
-        // 🔥 TAMBAHKAN INI: Update apiProducts kalau ada data baru
-        if (chainedRes.result?.items != null && chainedRes.result!.items!.isNotEmpty) {
-          print('✅ HTTP: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts');
+        if (_hasData(chainedRes)) {
+          apiProducts.value = _mapItems(chainedRes.result!.items!);
+          print('✅ Chained: ${apiProducts.length} items disimpan');
+        } else {
+          print('⚠️ Chained dataset kosong');
+        }
 
-          apiProducts.value = chainedRes.result!.items!.map((item) {
-          final categories = item['categories'];
-          String category = '-';
-          try {
-            category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
-          } catch (_) {}
-
-          final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-          final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
-
-          return {
-            'id': item['id'] ?? '-',
-            'title': item['display_name'] ?? '-',
-            'category': category,
-            'price': price,
-            'stock': stock,
-            'thumbnail': item['thumbnail'],
-            'status': stock > 20 ? 'Available' : 'Low Stock',
-            'url': item['share_url'],
-          };
-        }).toList();
-      } else {
-        print('⚠️  HTTP: Dataset kosong');
-      }
-
-
-        lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
-        print('✅ Chained request completed: ${lastStatus.value}');
+        lastStatus.value = 'Chained OK';
       } else {
         print('⚠️ First request failed, skipping chained request');
       }
 
       print('\n========================================');
       print('✅ ASYNC-AWAIT TEST COMPLETED');
-      print('📦 Total items in apiProducts: ${apiProducts.length}');
+      print('📦 Total items: ${apiProducts.length}');
       print('========================================\n');
 
       totalTests.value = logs.length;
     } catch (e) {
       print('❌ ERROR in async test: $e');
-      errorCount.value++;
-      logs.add({
-        'library': 'Async Test',
-        'status': 'ERROR',
-        'duration': '-',
-        'bytes': '-',
-        'error': e.toString(),
-      });
+      _logError('Async Test', e);
     } finally {
       loading.value = false;
       testMode.value = 'idle';
     }
   }
 
-  // ==========================================
-  // JUGA UPDATE runComparisonCallback()
-  // ==========================================
-
+  // CALLBACK VERSION
   void runComparisonCallback() {
     loading.value = true;
     testMode.value = 'callback';
@@ -206,9 +121,7 @@ class ApifyController extends GetxController {
     print('========================================\n');
 
     final url = AppConstants.apiUrl;
-    final overallStopwatch = Stopwatch()..start();
-
-    print('📤 [1/4] Fetching with HTTP (callback) + Input...');
+    final stopwatch = Stopwatch()..start();
 
     (_httpService as HttpService)
         .runActorWithInput(AppConstants.defaultActorInput)
@@ -217,58 +130,51 @@ class ApifyController extends GetxController {
           _updateStats(httpRes, 'http');
           print('✅ HTTP callback completed');
 
-          // 🔥 SIMPAN DATA
-          if (httpRes.result?.items != null &&
-              httpRes.result!.items!.isNotEmpty) {
-            print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items');
-            apiProducts.value = httpRes.result!.items!;
+          if (_hasData(httpRes)) {
+            apiProducts.value = _mapItems(httpRes.result!.items!);
+            print('✅ HTTP: ${apiProducts.length} items disimpan');
+          } else {
+            print('⚠️ HTTP dataset kosong');
           }
 
-          return Future.delayed(const Duration(milliseconds: 300)).then((_) {
-            print('📤 [2/4] Fetching with DIO (callback) + Input...');
-            return (_dioService as DioService).runActorWithInput(
-              AppConstants.defaultActorInput,
-            );
-          });
+          return Future.delayed(const Duration(milliseconds: 300))
+              .then((_) => (_dioService as DioService)
+                  .runActorWithInput(AppConstants.defaultActorInput));
         })
         .then((dioRes) {
           logs.add(_toLog('DIO (callback)', dioRes));
           _updateStats(dioRes, 'dio');
           print('✅ DIO callback completed');
 
-          // 🔥 SIMPAN DATA
-          if (dioRes.result?.items != null &&
-              dioRes.result!.items!.isNotEmpty) {
-            print('✅ DIO: Menyimpan ${dioRes.result!.items!.length} items');
-            apiProducts.value = dioRes.result!.items!;
+          if (_hasData(dioRes)) {
+            apiProducts.value = _mapItems(dioRes.result!.items!);
+            print('✅ DIO: ${apiProducts.length} items disimpan');
+          } else {
+            print('⚠️ DIO dataset kosong');
           }
 
-          if (dioRes.statusCode == 200 && dioRes.result != null) {
+          if (dioRes.statusCode == 200) {
             print('🔗 [3/4] Starting chained callback...');
-            return Future.delayed(const Duration(milliseconds: 200)).then((_) {
-              return _httpService.fetchApifyData(url);
-            });
+            return Future.delayed(const Duration(milliseconds: 200))
+                .then((_) => _httpService.fetchApifyData(url));
           } else {
-            print('⚠️ Skipping chained request due to error');
             throw Exception('Previous request failed');
           }
         })
         .then((chainedRes) {
           logs.add(_toLog('HTTP (chained callback)', chainedRes));
           _updateStats(chainedRes, 'http');
-          lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
-          print('✅ Chained callback completed: ${lastStatus.value}');
+          print('✅ Chained callback completed');
 
-          // 🔥 SIMPAN DATA
-          if (chainedRes.result?.items != null &&
-              chainedRes.result!.items!.isNotEmpty) {
-            apiProducts.value = chainedRes.result!.items!;
+          if (_hasData(chainedRes)) {
+            apiProducts.value = _mapItems(chainedRes.result!.items!);
+            print('✅ Chained: ${apiProducts.length} items disimpan');
           }
 
-          overallStopwatch.stop();
+          stopwatch.stop();
           print('\n========================================');
           print('✅ CALLBACK TEST COMPLETED');
-          print('⏱️  Total time: ${overallStopwatch.elapsedMilliseconds}ms');
+          print('⏱️ ${stopwatch.elapsedMilliseconds} ms');
           print('📦 Total items: ${apiProducts.length}');
           print('========================================\n');
 
@@ -276,23 +182,44 @@ class ApifyController extends GetxController {
         })
         .catchError((error) {
           print('❌ ERROR in callback chain: $error');
-          errorCount.value++;
-          logs.add({
-            'library': 'Callback Chain',
-            'status': 'ERROR',
-            'duration': '-',
-            'bytes': '-',
-            'error': error.toString(),
-          });
+          _logError('Callback Chain', error);
         })
         .whenComplete(() {
           loading.value = false;
           testMode.value = 'idle';
         });
   }
-  // ==========================================
-  // HELPER METHODS
-  // ==========================================
+
+  // HELPERS
+  bool _hasData(ApiResult res) =>
+      res.result?.items != null && res.result!.items!.isNotEmpty;
+
+  List<Map<String, dynamic>> _mapItems(List<dynamic> items) {
+    return items.map((item) {
+      final categories = item['categories'];
+      String category = '-';
+      try {
+        category =
+            categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ??
+                '-';
+      } catch (_) {}
+
+      final price =
+          item['price_instructions']?['unit_price']?.toString() ?? '-';
+      final stock = 15;
+
+      return {
+        'id': item['id'] ?? '-',
+        'title': item['display_name'] ?? '-',
+        'category': category,
+        'price': price,
+        'stock': stock,
+        'thumbnail': item['thumbnail'],
+        'status': stock > 20 ? 'Available' : 'Low Stock',
+        'url': item['share_url'],
+      };
+    }).toList();
+  }
 
   Map<String, dynamic> _toLog(String lib, ApiResult res) {
     return {
@@ -301,31 +228,34 @@ class ApifyController extends GetxController {
       'duration': '${res.durationMs} ms',
       'bytes': res.responseBytes,
       'error': res.error,
-      'hasData': res.result != null,
+      'hasData': _hasData(res),
     };
   }
 
   void _updateStats(ApiResult res, String type) {
     if (res.error == null) {
       successCount.value++;
+      final current = type == 'http' ? avgHttpTime.value : avgDioTime.value;
+      final count =
+          logs.where((l) => l['library'].toString().contains(type.toUpperCase())).length;
+      final avg = ((current * count) + res.durationMs) / (count + 1);
 
-      // Update average times
-      if (type == 'http') {
-        final current = avgHttpTime.value;
-        final count = logs
-            .where((l) => l['library'].toString().contains('HTTP'))
-            .length;
-        avgHttpTime.value = ((current * count) + res.durationMs) / (count + 1);
-      } else if (type == 'dio') {
-        final current = avgDioTime.value;
-        final count = logs
-            .where((l) => l['library'].toString().contains('DIO'))
-            .length;
-        avgDioTime.value = ((current * count) + res.durationMs) / (count + 1);
-      }
+      if (type == 'http') avgHttpTime.value = avg;
+      if (type == 'dio') avgDioTime.value = avg;
     } else {
       errorCount.value++;
     }
+  }
+
+  void _logError(String source, dynamic error) {
+    errorCount.value++;
+    logs.add({
+      'library': source,
+      'status': 'ERROR',
+      'duration': '-',
+      'bytes': '-',
+      'error': error.toString(),
+    });
   }
 
   void resetStats() {
@@ -341,9 +271,7 @@ class ApifyController extends GetxController {
 
   String getSuccessRate() {
     if (totalTests.value == 0) return '0%';
-    final rate = (successCount.value / totalTests.value * 100).toStringAsFixed(
-      1,
-    );
+    final rate = (successCount.value / totalTests.value * 100).toStringAsFixed(1);
     return '$rate%';
   }
 }
