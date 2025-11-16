@@ -6,10 +6,14 @@ class DynamicProductCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback? onTap;
 
+  /// Jika true, tampilkan layout compact (thumbnail kecil di kiri, teks di kanan)
+  final bool compact;
+
   const DynamicProductCard({
     super.key,
     required this.data,
     this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -20,6 +24,109 @@ class DynamicProductCard extends StatelessWidget {
     final price = _extractPrice();
     final stock = _extractStock();
 
+    // Jika compact -> tampilkan ListTile-style
+    if (compact) {
+      return Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              children: [
+                // thumbnail kecil
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            semanticLabel: title,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildSmallPlaceholder(),
+                          )
+                        : _buildSmallPlaceholder(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              subtitle.isNotEmpty
+                                  ? subtitle
+                                  : (data['category'] ?? ''),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (price != null)
+                            Text(
+                              price,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      if (stock != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStockColor(stock).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Stock: $stock',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _getStockColor(stock),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Default (original) layout
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -71,10 +178,10 @@ class DynamicProductCard extends StatelessWidget {
                       if (price != null)
                         Text(
                           price,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF8B0000),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       if (stock != null)
@@ -123,7 +230,7 @@ class DynamicProductCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: loadingProgress.expectedTotalBytes != null
                         ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
+                              loadingProgress.expectedTotalBytes!
                         : null,
                   ),
                 );
@@ -165,6 +272,15 @@ class DynamicProductCard extends StatelessWidget {
     );
   }
 
+  Widget _buildSmallPlaceholder() {
+    return Container(
+      color: Colors.grey.shade200,
+      child: Center(
+        child: Icon(Icons.local_drink, color: Colors.grey.shade400, size: 28),
+      ),
+    );
+  }
+
   // ==========================================
   // DYNAMIC DATA EXTRACTION
   // Auto-detect berbagai kemungkinan field names
@@ -192,7 +308,7 @@ class DynamicProductCard extends StatelessWidget {
     for (var key in possibleKeys) {
       if (data.containsKey(key) && data[key] != null) {
         final value = data[key].toString();
-        if (value.isNotEmpty && 
+        if (value.isNotEmpty &&
             (value.startsWith('http://') || value.startsWith('https://'))) {
           return value;
         }
@@ -261,22 +377,13 @@ class DynamicProductCard extends StatelessWidget {
   }
 
   String? _extractPrice() {
-    final possibleKeys = [
-      'price',
-      'cost',
-      'amount',
-      'value',
-      'harga',
-    ];
+    final possibleKeys = ['price', 'cost', 'amount', 'value', 'harga'];
 
     for (var key in possibleKeys) {
       if (data.containsKey(key) && data[key] != null) {
         final value = data[key];
         if (value is num) {
-          return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]}.',
-          )}';
+          return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
         } else if (value is String && value.isNotEmpty) {
           return value;
         }

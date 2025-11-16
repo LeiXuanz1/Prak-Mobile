@@ -21,13 +21,81 @@ class ApifyController extends GetxController {
   final RxDouble avgHttpTime = 0.0.obs;
   final RxDouble avgDioTime = 0.0.obs;
 
-  // ✨ NEW: Store API data untuk ditampilkan di catalog  
+  // Store API data untuk ditampilkan di catalog
   final RxList<dynamic> apiProducts = <dynamic>[].obs;
+  // Search query untuk filter produk pada UI
+  final RxString searchQuery = ''.obs;
+
+  // 🆕 RECENT ACTIVITIES
+  final RxList<Map<String, dynamic>> recentActivities = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     print('ApifyController initialized');
+    // HAPUS _initDemoActivities() - biar mulai dari kosong
+  }
+
+  // ==========================================
+  // ACTIVITY TRACKING
+  // ==========================================
+
+  /// Tambah activity baru (muncul di Recent Activity)
+  void addActivity({
+    required String type, // 'added', 'alert', 'reduced', 'updated'
+    required String title,
+    required String description,
+    String? badge,
+  }) {
+    final now = DateTime.now();
+    final activity = {
+      'type': type,
+      'title': title,
+      'description': description,
+      'badge': badge,
+      'timestamp': now.toIso8601String(),
+      'timeAgo': _getTimeAgo(now),
+    };
+
+    recentActivities.insert(0, activity);
+
+    // Limit to 50 activities
+    if (recentActivities.length > 50) {
+      recentActivities.removeRange(50, recentActivities.length);
+    }
+
+    // Update time ago setiap menit (opsional, untuk real-time update)
+    _updateTimeAgo();
+  }
+
+  /// Update semua "time ago" text
+  void _updateTimeAgo() {
+    for (var i = 0; i < recentActivities.length; i++) {
+      final timestamp = DateTime.parse(recentActivities[i]['timestamp']);
+      recentActivities[i]['timeAgo'] = _getTimeAgo(timestamp);
+    }
+    recentActivities.refresh();
+  }
+
+  /// Helper untuk format "time ago"
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inSeconds < 60) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      final mins = difference.inMinutes;
+      return '$mins ${mins == 1 ? "minute" : "minutes"} ago';
+    } else if (difference.inHours < 24) {
+      final hrs = difference.inHours;
+      return '$hrs ${hrs == 1 ? "hour" : "hours"} ago';
+    } else if (difference.inDays < 30) {
+      final days = difference.inDays;
+      return '$days ${days == 1 ? "day" : "days"} ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
   }
 
   // ==========================================
@@ -51,102 +119,23 @@ class ApifyController extends GetxController {
       logs.add(_toLog('HTTP (async-await)', httpRes));
       _updateStats(httpRes, 'http');
 
-      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts
       if (httpRes.result?.items != null && httpRes.result!.items!.isNotEmpty) {
-        print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts');
+        print(
+          '✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items ke apiProducts',
+        );
 
         apiProducts.value = httpRes.result!.items!.map((item) {
-        final categories = item['categories'];
-        String category = '-';
-        try {
-          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
-        } catch (_) {}
-
-        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
-
-        return {
-          'id': item['id'] ?? '-',
-          'title': item['display_name'] ?? '-',
-          'category': category,
-          'price': price,
-          'stock': stock,
-          'thumbnail': item['thumbnail'],
-          'status': stock > 20 ? 'Available' : 'Low Stock',
-          'url': item['share_url'],
-        };
-      }).toList();
-    } else {
-        print('⚠️  HTTP: Dataset kosong');
-    }
-
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Step 2: DIO Request dengan INPUT
-      print('📤 [2/4] Fetching with DIO (async-await) + Input...');
-      final dioRes = await (_dioService as DioService).runActorWithInput(
-        AppConstants.defaultActorInput,
-      );
-      logs.add(_toLog('DIO (async-await)', dioRes));
-      _updateStats(dioRes, 'dio');
-
-      // 🔥 TAMBAHKAN INI: Simpan data ke apiProducts (kalau HTTP gagal)
-      if (dioRes.result?.items != null && dioRes.result!.items!.isNotEmpty) {
-        print('✅ HTTP: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts');
-
-        apiProducts.value = dioRes.result!.items!.map((item) {
-        final categories = item['categories'];
-        String category = '-';
-        try {
-          category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
-        } catch (_) {}
-
-        final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-        final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
-
-        return {
-          'id': item['id'] ?? '-',
-          'title': item['display_name'] ?? '-',
-          'category': category,
-          'price': price,
-          'stock': stock,
-          'thumbnail': item['thumbnail'],
-          'status': stock > 20 ? 'Available' : 'Low Stock',
-          'url': item['share_url'],
-        };
-      }).toList();
-    } else {
-        print('⚠️  HTTP: Dataset kosong');
-    }
-
-
-      // Step 3: Chained Request (different query)
-      print('🔗 [3/4] Starting chained request with different query...');
-      if (httpRes.statusCode >= 200 && httpRes.statusCode < 300) {
-        print('✅ First request success, trying different query...');
-
-        final chainedInput = {'language': 'en', 'query': 'Sweet Soy Sauce'};
-
-        await Future.delayed(const Duration(milliseconds: 300));
-        final chainedRes = await (_dioService as DioService).runActorWithInput(
-          chainedInput,
-        );
-        logs.add(_toLog('DIO (chained)', chainedRes));
-        _updateStats(chainedRes, 'dio');
-
-        // 🔥 TAMBAHKAN INI: Update apiProducts kalau ada data baru
-        if (chainedRes.result?.items != null && chainedRes.result!.items!.isNotEmpty) {
-          print('✅ HTTP: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts');
-
-          apiProducts.value = chainedRes.result!.items!.map((item) {
           final categories = item['categories'];
           String category = '-';
           try {
-            category = categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ?? '-';
+            category =
+                categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ??
+                '-';
           } catch (_) {}
 
-          final price = item['price_instructions']?['unit_price']?.toString() ?? '-';
-          final stock = 15; // bisa diganti kalau dataset kamu nanti punya field stok
+          final price =
+              item['price_instructions']?['unit_price']?.toString() ?? '-';
+          final stock = 15;
 
           return {
             'id': item['id'] ?? '-',
@@ -163,6 +152,96 @@ class ApifyController extends GetxController {
         print('⚠️  HTTP: Dataset kosong');
       }
 
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Step 2: DIO Request dengan INPUT
+      print('📤 [2/4] Fetching with DIO (async-await) + Input...');
+      final dioRes = await (_dioService as DioService).runActorWithInput(
+        AppConstants.defaultActorInput,
+      );
+      logs.add(_toLog('DIO (async-await)', dioRes));
+      _updateStats(dioRes, 'dio');
+
+      if (dioRes.result?.items != null && dioRes.result!.items!.isNotEmpty) {
+        print(
+          '✅ DIO: Menyimpan ${dioRes.result!.items!.length} items ke apiProducts',
+        );
+
+        apiProducts.value = dioRes.result!.items!.map((item) {
+          final categories = item['categories'];
+          String category = '-';
+          try {
+            category =
+                categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ??
+                '-';
+          } catch (_) {}
+
+          final price =
+              item['price_instructions']?['unit_price']?.toString() ?? '-';
+          final stock = 15;
+
+          return {
+            'id': item['id'] ?? '-',
+            'title': item['display_name'] ?? '-',
+            'category': category,
+            'price': price,
+            'stock': stock,
+            'thumbnail': item['thumbnail'],
+            'status': stock > 20 ? 'Available' : 'Low Stock',
+            'url': item['share_url'],
+          };
+        }).toList();
+      } else {
+        print('⚠️  DIO: Dataset kosong');
+      }
+
+      // Step 3: Chained Request (different query)
+      print('🔗 [3/4] Starting chained request with different query...');
+      if (httpRes.statusCode >= 200 && httpRes.statusCode < 300) {
+        print('✅ First request success, trying different query...');
+
+        final chainedInput = {'language': 'en', 'query': 'Sweet Soy Sauce'};
+
+        await Future.delayed(const Duration(milliseconds: 300));
+        final chainedRes = await (_dioService as DioService).runActorWithInput(
+          chainedInput,
+        );
+        logs.add(_toLog('DIO (chained)', chainedRes));
+        _updateStats(chainedRes, 'dio');
+
+        if (chainedRes.result?.items != null &&
+            chainedRes.result!.items!.isNotEmpty) {
+          print(
+            '✅ Chained: Menyimpan ${chainedRes.result!.items!.length} items ke apiProducts',
+          );
+
+          apiProducts.value = chainedRes.result!.items!.map((item) {
+            final categories = item['categories'];
+            String category = '-';
+            try {
+              category =
+                  categories?[0]?['categories']?[0]?['categories']?[0]?['name'] ??
+                  '-';
+            } catch (_) {}
+
+            final price =
+                item['price_instructions']?['unit_price']?.toString() ?? '-';
+            final stock = 15;
+
+            return {
+              'id': item['id'] ?? '-',
+              'title': item['display_name'] ?? '-',
+              'category': category,
+              'price': price,
+              'stock': stock,
+              'thumbnail': item['thumbnail'],
+              'status': stock > 20 ? 'Available' : 'Low Stock',
+              'url': item['share_url'],
+            };
+          }).toList();
+        } else {
+          print('⚠️  Chained: Dataset kosong');
+        }
 
         lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
         print('✅ Chained request completed: ${lastStatus.value}');
@@ -193,9 +272,8 @@ class ApifyController extends GetxController {
   }
 
   // ==========================================
-  // JUGA UPDATE runComparisonCallback()
+  // CALLBACK VERSION
   // ==========================================
-
   void runComparisonCallback() {
     loading.value = true;
     testMode.value = 'callback';
@@ -217,7 +295,6 @@ class ApifyController extends GetxController {
           _updateStats(httpRes, 'http');
           print('✅ HTTP callback completed');
 
-          // 🔥 SIMPAN DATA
           if (httpRes.result?.items != null &&
               httpRes.result!.items!.isNotEmpty) {
             print('✅ HTTP: Menyimpan ${httpRes.result!.items!.length} items');
@@ -236,7 +313,6 @@ class ApifyController extends GetxController {
           _updateStats(dioRes, 'dio');
           print('✅ DIO callback completed');
 
-          // 🔥 SIMPAN DATA
           if (dioRes.result?.items != null &&
               dioRes.result!.items!.isNotEmpty) {
             print('✅ DIO: Menyimpan ${dioRes.result!.items!.length} items');
@@ -259,7 +335,6 @@ class ApifyController extends GetxController {
           lastStatus.value = chainedRes.result?.toString() ?? 'unknown';
           print('✅ Chained callback completed: ${lastStatus.value}');
 
-          // 🔥 SIMPAN DATA
           if (chainedRes.result?.items != null &&
               chainedRes.result!.items!.isNotEmpty) {
             apiProducts.value = chainedRes.result!.items!;
@@ -290,6 +365,7 @@ class ApifyController extends GetxController {
           testMode.value = 'idle';
         });
   }
+
   // ==========================================
   // HELPER METHODS
   // ==========================================
@@ -309,7 +385,6 @@ class ApifyController extends GetxController {
     if (res.error == null) {
       successCount.value++;
 
-      // Update average times
       if (type == 'http') {
         final current = avgHttpTime.value;
         final count = logs
@@ -345,5 +420,106 @@ class ApifyController extends GetxController {
       1,
     );
     return '$rate%';
+  }
+
+  /// Tambah produk ke collection lokal
+  void addProduct(Map<String, dynamic> product, {bool toTop = true}) {
+    final p = Map<String, dynamic>.from(product);
+    p['source'] = p['source'] ?? 'local';
+    
+    if (toTop) {
+      apiProducts.insert(0, p);
+    } else {
+      apiProducts.add(p);
+    }
+
+    final stock = int.tryParse(p['stock']?.toString() ?? '0') ?? 0;
+
+    // 🆕 Add activity - REAL TIME
+    addActivity(
+      type: 'added',
+      title: 'Stock Added',
+      description: '${p['title']} +$stock units',
+      badge: '+$stock',
+    );
+
+    // Check for low stock alert
+    if (stock <= 20) {
+      addActivity(
+        type: 'alert',
+        title: 'Low Stock Alert',
+        description: '${p['title']} - Only $stock units left',
+        badge: 'Alert',
+      );
+    }
+
+    print('✅ Product added: ${p['title']} with activity logged');
+  }
+
+  /// Update stock (for future use)
+  void updateProductStock(String productId, int newStock, {String action = 'updated'}) {
+    final index = apiProducts.indexWhere((p) => p['id'] == productId);
+    if (index != -1) {
+      final product = apiProducts[index];
+      final oldStock = int.tryParse(product['stock']?.toString() ?? '0') ?? 0;
+      product['stock'] = newStock;
+      apiProducts[index] = product;
+
+      // Add activity based on action
+      if (action == 'reduced') {
+        final diff = oldStock - newStock;
+        addActivity(
+          type: 'reduced',
+          title: 'Stock Reduced',
+          description: '${product['title']} -$diff units',
+          badge: '-$diff',
+        );
+      } else if (action == 'added') {
+        final diff = newStock - oldStock;
+        addActivity(
+          type: 'added',
+          title: 'Stock Added',
+          description: '${product['title']} +$diff units',
+          badge: '+$diff',
+        );
+      } else {
+        addActivity(
+          type: 'updated',
+          title: 'Stock Updated',
+          description: '${product['title']} - New stock: $newStock',
+          badge: 'Updated',
+        );
+      }
+
+      // Check for low stock
+      if (newStock <= 20) {
+        addActivity(
+          type: 'alert',
+          title: 'Low Stock Alert',
+          description: '${product['title']} - Only $newStock units left',
+          badge: 'Alert',
+        );
+      }
+
+      print('✅ Stock updated for ${product['title']} with activity logged');
+    }
+  }
+
+  /// Delete product
+  void deleteProduct(String productId) {
+    final index = apiProducts.indexWhere((p) => p['id'] == productId);
+    if (index != -1) {
+      final product = apiProducts[index];
+      apiProducts.removeAt(index);
+
+      addActivity(
+        type: 'reduced',
+        title: 'Product Removed',
+        description: '${product['title']} has been removed from inventory',
+        badge: 'Removed',
+      );
+
+      print('✅ Product deleted: ${product['title']}');
+    }
   }
 }
