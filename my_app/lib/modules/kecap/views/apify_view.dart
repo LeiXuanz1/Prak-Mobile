@@ -3,14 +3,16 @@ import 'package:get/get.dart';
 import 'package:my_app/widget/dynamic_product_card.dart';
 import '../controllers/apify_controller.dart';
 import 'add_stock_view.dart';
+import '../controllers/theme_controller.dart';
 
 class ApifyView extends StatelessWidget {
-  const ApifyView({super.key});
+  final VoidCallback? onThemeChange;
+  final controller = Get.put(ApifyController(), permanent: true);
+
+  ApifyView({super.key, this.onThemeChange});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ApifyController());
-
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F0),
       body: CustomScrollView(
@@ -47,7 +49,10 @@ class ApifyView extends StatelessWidget {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                              icon: const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.white,
+                              ),
                               onPressed: () {},
                             ),
                           ],
@@ -66,10 +71,23 @@ class ApifyView extends StatelessWidget {
             backgroundColor: const Color(0xFF8B0000),
             actions: [
               IconButton(
+                icon: const Icon(Icons.brightness_6),
+                onPressed: () {
+                  Get.find<ThemeController>().toggleTheme();
+                }
+              ),
+              IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: controller.resetStats,
                 tooltip: 'Reset',
               ),
+              IconButton(
+                icon: const Icon(Icons.storage_rounded, color: Colors.white),
+                tooltip: 'Go to supabase',
+                onPressed: () {
+                  Get.toNamed('/supabase-products');
+                },
+              )
             ],
           ),
 
@@ -163,11 +181,7 @@ class ApifyView extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.waving_hand,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.waving_hand, color: Colors.white, size: 32),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -176,10 +190,7 @@ class ApifyView extends StatelessWidget {
               children: [
                 Text(
                   'Welcome back',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 SizedBox(height: 4),
                 Text(
@@ -193,10 +204,7 @@ class ApifyView extends StatelessWidget {
                 SizedBox(height: 2),
                 Text(
                   'Monday, November 18, 2025',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white60,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.white60),
                 ),
               ],
             ),
@@ -212,11 +220,12 @@ class ApifyView extends StatelessWidget {
       final lowStockItems = controller.apiProducts
           .where((p) => (p['stock'] ?? 0) <= 20)
           .length;
-      
+
       double totalValue = 0;
       for (var product in controller.apiProducts) {
         final stock = int.tryParse(product['stock']?.toString() ?? '0') ?? 0;
-        final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
+        final price =
+            double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
         totalValue += stock * price;
       }
 
@@ -333,10 +342,7 @@ class ApifyView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -422,7 +428,7 @@ class ApifyView extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.center,                                                          
               ),
             ],
           ),
@@ -463,7 +469,8 @@ class ApifyView extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => _showAllActivities(Get.context!, controller),
+                    onPressed: () =>
+                        _showAllActivities(Get.context!, controller),
                     child: const Text(
                       'View All',
                       style: TextStyle(
@@ -485,7 +492,10 @@ class ApifyView extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       'No recent activity',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -495,10 +505,8 @@ class ApifyView extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: activities.length,
-                separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: Colors.grey.shade200,
-                ),
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: Colors.grey.shade200),
                 itemBuilder: (context, index) {
                   return _buildActivityItem(activities[index]);
                 },
@@ -522,7 +530,11 @@ class ApifyView extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 16, color: Color(0xFFFF6B00)),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: Color(0xFFFF6B00),
+                      ),
                     ],
                   ),
                 ),
@@ -596,18 +608,12 @@ class ApifyView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             description,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 4),
           Text(
             timeAgo,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -676,10 +682,7 @@ class ApifyView extends StatelessWidget {
                 children: [
                   const Text(
                     'All Activities',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -696,10 +699,8 @@ class ApifyView extends StatelessWidget {
                   controller: scrollController,
                   padding: const EdgeInsets.all(16),
                   itemCount: allActivities.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1,
-                    color: Colors.grey.shade200,
-                  ),
+                  separatorBuilder: (context, index) =>
+                      Divider(height: 1, color: Colors.grey.shade200),
                   itemBuilder: (context, index) {
                     return _buildActivityItem(allActivities[index]);
                   },
@@ -713,57 +714,58 @@ class ApifyView extends StatelessWidget {
   }
 
   Widget _buildAPITestingSection(ApifyController controller) {
-    return Obx(() => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'API Testing',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'API Testing',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildAPIButton(
-                'HTTP Request',
-                Icons.api,
-                Colors.blue,
-                controller.loading.value && controller.testMode.value == 'async',
-                () => controller.runComparisonAsync(),
-              ),
-              _buildAPIButton(
-                'Dio Request',
-                Icons.cloud_queue,
-                Colors.green,
-                controller.loading.value && controller.testMode.value == 'callback',
-                () => controller.runComparisonCallback(),
-              ),
-              _buildAPIButton(
-                'Clear Logs',
-                Icons.delete_outline,
-                Colors.red,
-                false,
-                () {
-                  controller.logs.clear();
-                  Get.snackbar('Success', 'Logs cleared');
-                },
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildAPIButton(
+                  'HTTP Request',
+                  Icons.api,
+                  Colors.blue,
+                  controller.loading.value &&
+                      controller.testMode.value == 'async',
+                  () => controller.runComparisonAsync(),
+                ),
+                _buildAPIButton(
+                  'Dio Request',
+                  Icons.cloud_queue,
+                  Colors.green,
+                  controller.loading.value &&
+                      controller.testMode.value == 'callback',
+                  () => controller.runComparisonCallback(),
+                ),
+                _buildAPIButton(
+                  'Clear Logs',
+                  Icons.delete_outline,
+                  Colors.red,
+                  false,
+                  () {
+                    controller.logs.clear();
+                    Get.snackbar('Success', 'Logs cleared');
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildAPIButton(
@@ -891,7 +893,10 @@ class ApifyView extends StatelessWidget {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFFF6B00), width: 2),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFFF6B00),
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -932,12 +937,13 @@ class ApifyView extends StatelessWidget {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.75,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.75,
+                          ),
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         final item = products[index];
@@ -1001,7 +1007,10 @@ class ApifyView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close', style: TextStyle(color: Color(0xFFFF6B00))),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: Color(0xFFFF6B00)),
+            ),
           ),
         ],
       ),
