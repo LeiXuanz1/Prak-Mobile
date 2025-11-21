@@ -19,26 +19,41 @@ class ProductHiveModelAdapter extends TypeAdapter<ProductHiveModel> {
     return ProductHiveModel(
       id: fields[0] as String,
       title: fields[1] as String,
-      brand: fields[2] as String,
-      imageUrl: fields[3] as String?,
-      price: fields[4] as dynamic,
+      category: fields[2] as String,
+      stock: fields[3] as int,
+      unit: fields[4] as String,
+      price: fields[5] as double,
+      description: fields[6] as String,
+      thumbnail: fields[7] as dynamic,
+      source: fields[8] as String,
+      status: fields[9] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductHiveModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.title)
       ..writeByte(2)
-      ..write(obj.brand)
+      ..write(obj.category)
       ..writeByte(3)
-      ..write(obj.imageUrl)
+      ..write(obj.stock)
       ..writeByte(4)
-      ..write(obj.price);
+      ..write(obj.unit)
+      ..writeByte(5)
+      ..write(obj.price)
+      ..writeByte(6)
+      ..write(obj.description)
+      ..writeByte(7)
+      ..write(obj.thumbnail)
+      ..writeByte(8)
+      ..write(obj.source)
+      ..writeByte(9)
+      ..write(obj.status);
   }
 
   @override

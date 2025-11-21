@@ -1,10 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseProductRepository {
-
   final SupabaseClient client = Supabase.instance.client;
 
-  /// Insert product
+  // Insert product
   Future<void> addProduct(Map<String, dynamic> json) async {
     try {
       await client.from('products').insert(json);
@@ -13,7 +12,7 @@ class SupabaseProductRepository {
     }
   }
 
-  /// Get all products
+  // Get all products
   Future<List<Map<String, dynamic>>> getProducts() async {
     try {
       final data = await client.from('products').select();
@@ -23,7 +22,7 @@ class SupabaseProductRepository {
     }
   }
 
-  /// Update product
+  // Update product
   Future<void> updateProduct(String id, Map<String, dynamic> json) async {
     try {
       await client.from('products').update(json).eq('id', id);
@@ -32,7 +31,7 @@ class SupabaseProductRepository {
     }
   }
 
-  /// Delete product
+  // Delete product
   Future<void> deleteProduct(String id) async {
     try {
       await client.from('products').delete().eq('id', id);

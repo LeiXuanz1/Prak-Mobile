@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'modules/kecap/controllers/theme_controller.dart';
-import 'modules/kecap/services/supabase_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import 'core/bindings/initial_bindings.dart';
+import 'core/services/theme_controller.dart';
 import '/routes/app_pages.dart';
 import '/routes/app_routes.dart';
+import 'data/local/hive_boxes.dart';
+import 'data/cloud/supabase_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await dotenv.load(fileName: ".env");
+
+  await Hive.initFlutter();
+  await HiveBoxes.init();
+
   await SupabaseService.init();
 
   Get.put(ThemeController(), permanent: true);
@@ -22,16 +29,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Get.find<ThemeController>();
 
-    return Obx(
-      () => GetMaterialApp(
+    return Obx(() {
+      return GetMaterialApp(
         debugShowCheckedModeBanner: false,
+
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
-        themeMode: theme.isDark.value ? ThemeMode.dark : ThemeMode.light,
+        themeMode: theme.themeMode,
 
+        initialBinding: InitialBindings(),
         initialRoute: AppRoutes.apify,
         getPages: AppPages.routes,
-      ),
-    );
+      );
+    });
   }
 }

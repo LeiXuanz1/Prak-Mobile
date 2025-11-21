@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/main.dart';
-import 'package:my_app/utils/preferences_service.dart';
+import 'package:my_app/core/services/preferences_service.dart';
 
 class FakePreferencesService extends PreferencesService {
   bool fake = false;

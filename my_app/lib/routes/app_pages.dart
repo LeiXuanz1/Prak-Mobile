@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
-import '/app/bindings/apify_binding.dart';
-import '/modules/kecap/views/apify_view.dart';
+import '/core/bindings/apify_bindings.dart';
+import '../modules/apify/views/apify_view.dart';
 import 'app_routes.dart';
-import '/modules/kecap/views/supabase_product_page.dart';
+import '../modules/product/views/supabase/supabase_product_page.dart';
+import '../modules/product/views/hive/hive_product_page.dart';
 
 class AppPages {
   static final routes = [
@@ -14,7 +15,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.supabaseProducts,
       page: () => SupabaseProductPage(),
-      binding: ApifyBinding(),   // gunakan binding yg sama
+    ),
+    GetPage(
+      name: AppRoutes.hiveProducts,
+      page: () => HiveProductPage(),
     ),
   ];
 }
