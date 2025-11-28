@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/modules/product/widgets/dynamic_product_card.dart';
+import 'package:my_app/modules/apify/controllers/apify_controller.dart';
+import 'package:my_app/modules/product/views/add_stock_view.dart';
 
 class ProductCatalogSection extends StatelessWidget {
   final HiveProductController controller;
@@ -48,6 +50,28 @@ class ProductCatalogSection extends StatelessWidget {
             ),
           ),
           actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Find the actual ProductHiveModel from the controller to pass to edit view
+                try {
+                  final allProducts = controller.products;
+                  final prod = allProducts.firstWhere(
+                    (p) => p.id == product['id'],
+                    orElse: () => allProducts.isNotEmpty
+                        ? allProducts.first
+                        : throw Exception('Product not found'),
+                  );
+                  Get.to(() => AddStockView(productToEdit: prod));
+                } catch (e) {
+                  Get.snackbar('Error', 'Could not load product for editing');
+                }
+              },
+              child: const Text(
+                'Edit',
+                style: TextStyle(color: Color(0xFFFF6B00)),
+              ),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text(
@@ -172,50 +196,146 @@ class ProductCatalogSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: controller.loading.value ? const Center(child: CircularProgressIndicator()) : products.isEmpty ?
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox,
-                                size: 64,
-                                color: Colors.grey.shade300,
+                      child: controller.loading.value
+                          ? const Center(child: CircularProgressIndicator())
+                          : products.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.inbox,
+                                    size: 64,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No products found',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No products found',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GridView.builder(
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.75,
-                        ),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          final map = products[index];
-                          return GestureDetector(
-                            onTap: () => _showProductDetail(context, map),
-                            child: DynamicProductCard(
-                              data: map,
-                              compact: false,
-                              onTap: () =>
-                                  _showProductDetail(context, map),
+                            )
+                          : GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 0.75,
+                                  ),
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final map = products[index];
+                                return Stack(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () =>
+                                          _showProductDetail(context, map),
+                                      child: DynamicProductCard(
+                                        data: map,
+                                        compact: false,
+                                        onTap: () =>
+                                            _showProductDetail(context, map),
+                                      ),
+                                    ),
+                                    // Delete button (red trash icon) - top right corner
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          // Show confirmation dialog before delete
+                                          showDialog(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text(
+                                                'Delete Product?',
+                                              ),
+                                              content: Text(
+                                                'Are you sure you want to delete "${map['title'] ?? 'this product'}"?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(ctx),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    controller.deleteProduct(
+                                                      map['id'] ?? '',
+                                                    );
+                                                    try {
+                                                      final apify =
+                                                          Get.find<
+                                                            ApifyController
+                                                          >();
+                                                      apify.addRecentActivity({
+                                                        'type': 'deleted',
+                                                        'title':
+                                                            map['title'] ??
+                                                            'Product',
+                                                        'description':
+                                                            'Deleted from local storage',
+                                                        'timeAgo': 'just now',
+                                                        'timestamp': DateTime.now()
+                                                            .toIso8601String(),
+                                                      });
+                                                    } catch (_) {}
+                                                    Navigator.pop(ctx);
+                                                    Get.snackbar(
+                                                      'Deleted',
+                                                      'Product deleted successfully',
+                                                      snackPosition:
+                                                          SnackPosition.BOTTOM,
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      colorText: Colors.white,
+                                                    );
+                                                  },
+                                                  child: const Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.red.withValues(
+                                                  alpha: 0.4,
+                                                ),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          padding: const EdgeInsets.all(8),
+                                          child: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ],
                 ),

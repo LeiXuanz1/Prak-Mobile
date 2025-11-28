@@ -80,6 +80,12 @@ class ApifyController extends GetxController {
     HiveBoxes.recentActivities.flush();
   }
 
+  /// Public helper to add a recent activity from other modules/controllers.
+  /// This ensures the activity list is kept in-sync and persisted to Hive.
+  void addRecentActivity(Map<String, dynamic> activity) {
+    recentActivities.insert(0, activity);
+    _saveRecentActivitiesToHive();
+  }
 
   // SUPABASE LOAD (READ ONLY)
   Future<void> loadSupabaseProducts() async {
@@ -168,7 +174,7 @@ class ApifyController extends GetxController {
       try {
         category =
             item['categories']?[0]?['categories']?[0]?['categories']?[0]?['name'] ??
-                '-';
+            '-';
       } catch (_) {}
 
       // price
@@ -220,14 +226,16 @@ class ApifyController extends GetxController {
 
       final current = (type == 'http') ? avgHttpTime.value : avgDioTime.value;
 
-      final count = logs.where((l) =>
-              l['library']?.toString().toLowerCase().contains(type) ??
-              false)
+      final count = logs
+          .where(
+            (l) =>
+                l['library']?.toString().toLowerCase().contains(type) ?? false,
+          )
           .length;
 
       final avg =
           ((current * (count - 1).clamp(0, double.infinity)) + res.durationMs) /
-              (count.clamp(1, double.infinity));
+          (count.clamp(1, double.infinity));
 
       if (type == 'http') {
         avgHttpTime.value = avg;
@@ -309,46 +317,50 @@ class ApifyController extends GetxController {
     (_httpService as HttpService)
         .runActorWithInput(AppConstants.defaultActorInput)
         .then((httpRes) {
-      logs.add(_toLog('HTTP (callback)', httpRes));
-      _updateStats(httpRes, 'http');
+          logs.add(_toLog('HTTP (callback)', httpRes));
+          _updateStats(httpRes, 'http');
 
-      final data = _tryGetApifyResult(httpRes);
-      if (data != null) {
-        apiProducts.value = _mapItems(data.items);
-        _saveApiProductsToHive();
-      }
+          final data = _tryGetApifyResult(httpRes);
+          if (data != null) {
+            apiProducts.value = _mapItems(data.items);
+            _saveApiProductsToHive();
+          }
 
-      return (_dioService as DioService).runActorWithInput(
-        AppConstants.defaultActorInput,
-      );
-    }).then((dioRes) {
-      logs.add(_toLog('DIO (callback)', dioRes));
-      _updateStats(dioRes, 'dio');
+          return (_dioService as DioService).runActorWithInput(
+            AppConstants.defaultActorInput,
+          );
+        })
+        .then((dioRes) {
+          logs.add(_toLog('DIO (callback)', dioRes));
+          _updateStats(dioRes, 'dio');
 
-      final data = _tryGetApifyResult(dioRes);
-      if (data != null) {
-        apiProducts.value = _mapItems(data.items);
-        _saveApiProductsToHive();
-      }
+          final data = _tryGetApifyResult(dioRes);
+          if (data != null) {
+            apiProducts.value = _mapItems(data.items);
+            _saveApiProductsToHive();
+          }
 
-      return _httpService.fetchApifyData(AppConstants.apiUrl);
-    }).then((chainedRes) {
-      logs.add(_toLog('HTTP (chained callback)', chainedRes));
-      _updateStats(chainedRes, 'http');
+          return _httpService.fetchApifyData(AppConstants.apiUrl);
+        })
+        .then((chainedRes) {
+          logs.add(_toLog('HTTP (chained callback)', chainedRes));
+          _updateStats(chainedRes, 'http');
 
-      final data = _tryGetApifyResult(chainedRes);
-      if (data != null) {
-        apiProducts.value = _mapItems(data.items);
-        _saveApiProductsToHive();
-      }
+          final data = _tryGetApifyResult(chainedRes);
+          if (data != null) {
+            apiProducts.value = _mapItems(data.items);
+            _saveApiProductsToHive();
+          }
 
-      totalTests.value = logs.length;
-    }).catchError((error) {
-      _logError('Callback Chain', error);
-    }).whenComplete(() {
-      loading.value = false;
-      testMode.value = 'idle';
-    });
+          totalTests.value = logs.length;
+        })
+        .catchError((error) {
+          _logError('Callback Chain', error);
+        })
+        .whenComplete(() {
+          loading.value = false;
+          testMode.value = 'idle';
+        });
   }
 
   // UTILITIES
@@ -364,8 +376,9 @@ class ApifyController extends GetxController {
 
   String getSuccessRate() {
     if (totalTests.value == 0) return '0%';
-    final rate =
-        (successCount.value / totalTests.value * 100).toStringAsFixed(1);
+    final rate = (successCount.value / totalTests.value * 100).toStringAsFixed(
+      1,
+    );
     return '$rate%';
   }
 }

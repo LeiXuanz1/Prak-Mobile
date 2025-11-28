@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../hive_boxes.dart';
 import '../hive_models/product_hive_model.dart';
+import '../../../modules/apify/controllers/apify_controller.dart';
 
 class HiveProductController extends GetxController {
   // LIST UTAMA (Model Asli)
@@ -42,7 +43,22 @@ class HiveProductController extends GetxController {
     final box = HiveBoxes.products;
     await box.put(product.id, product);
 
+    // reload list
     loadProducts();
+
+    // Add a recent activity so UI shows change in Recent Activity section
+    try {
+      final apify = Get.find<ApifyController>();
+      apify.addRecentActivity({
+        'type': 'added',
+        'title': product.title,
+        'description': 'Added to local storage',
+        'timeAgo': 'just now',
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {
+      // If ApifyController isn't available for some reason, silently ignore
+    }
   }
 
   // HAPUS PRODUK
@@ -51,6 +67,26 @@ class HiveProductController extends GetxController {
     await box.delete(id);
 
     loadProducts();
+  }
+
+  // UPDATE PRODUK
+  Future<void> updateProduct(String id, ProductHiveModel product) async {
+    final box = HiveBoxes.products;
+    await box.put(id, product);
+
+    loadProducts();
+
+    // Log recent activity for update
+    try {
+      final apify = Get.find<ApifyController>();
+      apify.addRecentActivity({
+        'type': 'updated',
+        'title': product.title,
+        'description': 'Updated product',
+        'timeAgo': 'just now',
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {}
   }
 
   // CLEAR SEMUA DATA
@@ -66,15 +102,15 @@ class HiveProductController extends GetxController {
     if (searchQuery.value.isEmpty) return apiProducts;
 
     return apiProducts
-        .where((p) =>
-            p['name']
-                .toString()
-                .toLowerCase()
-                .contains(searchQuery.value.toLowerCase()) ||
-            p['category']
-                .toString()
-                .toLowerCase()
-                .contains(searchQuery.value.toLowerCase()))
+        .where(
+          (p) =>
+              p['name'].toString().toLowerCase().contains(
+                searchQuery.value.toLowerCase(),
+              ) ||
+              p['category'].toString().toLowerCase().contains(
+                searchQuery.value.toLowerCase(),
+              ),
+        )
         .toList();
   }
 }

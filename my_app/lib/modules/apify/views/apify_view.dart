@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/apify_controller.dart';
-import '../../product/views/add_stock_view.dart';
+import '../../product/views/hive/hive_add_view.dart';
 
 // widgets
 import '../../../shared/widgets/kecap_app_bar.dart';
@@ -14,7 +14,10 @@ import '../../product/views/product_catalog.dart';
 
 class ApifyView extends StatelessWidget {
   final VoidCallback? onThemeChange;
-  final ApifyController controller = Get.put(ApifyController(), permanent: true);
+  final ApifyController controller = Get.put(
+    ApifyController(),
+    permanent: true,
+  );
 
   ApifyView({super.key, this.onThemeChange});
 
@@ -36,14 +39,22 @@ class ApifyView extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Inventory Overview',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.surface),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.surface,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DashboardStats(controller: controller),
                   const SizedBox(height: 20),
                   Text(
                     'Quick Actions',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.surface),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.surface,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   QuickActions(controller: controller),
@@ -60,7 +71,7 @@ class ApifyView extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.to(() => const AddStockView()),
+        onPressed: () => Get.to(() => const HiveAddView()),
         backgroundColor: const Color(0xFFFF6B00),
         icon: const Icon(Icons.add),
         label: const Text('Tambah Produk'),

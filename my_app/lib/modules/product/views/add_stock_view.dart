@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/data/local/hive_models/product_hive_model.dart';
 
 class AddStockView extends StatefulWidget {
-  const AddStockView({super.key});
+  final ProductHiveModel? productToEdit;
+  const AddStockView({super.key, this.productToEdit});
 
   @override
   State<AddStockView> createState() => _AddStockViewState();
@@ -18,6 +21,9 @@ class _AddStockViewState extends State<AddStockView> {
   final _unitCtrl = TextEditingController(text: 'Units');
   final _priceCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+
+  File? _selectedImageFile;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final _controller = Get.find<HiveProductController>();
 
@@ -38,6 +44,72 @@ class _AddStockViewState extends State<AddStockView> {
     // Listen to changes for real-time summary update
     _stockCtrl.addListener(() => setState(() {}));
     _priceCtrl.addListener(() => setState(() {}));
+
+    // If editing, populate fields
+    final editing = widget.productToEdit;
+    if (editing != null) {
+      _nameCtrl.text = editing.title;
+      _category = editing.category;
+      _stockCtrl.text = editing.stock.toString();
+      _unitCtrl.text = editing.unit;
+      _priceCtrl.text = editing.price.toString();
+      _descCtrl.text = editing.description;
+      if (editing.thumbnail != null) {
+        // if it's a local file path and exists, show preview
+        final path = editing.thumbnail.toString();
+        if (path.isNotEmpty && File(path).existsSync()) {
+          _selectedImageFile = File(path);
+        }
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+        final fileSizeInMB = await file.length() / (1024 * 1024);
+
+        if (fileSizeInMB > 5) {
+          Get.snackbar(
+            'File Terlalu Besar',
+            'Maksimal ukuran file adalah 5 MB',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+          return;
+        }
+
+        final ext = file.path.split('.').last.toLowerCase();
+        if (!['jpg', 'jpeg', 'png'].contains(ext)) {
+          Get.snackbar(
+            'Format Tidak Didukung',
+            'Hanya jpg, jpeg, png yang didukung',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+          return;
+        }
+
+        setState(() => _selectedImageFile = file);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal memilih gambar: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   @override
@@ -53,22 +125,48 @@ class _AddStockViewState extends State<AddStockView> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final hiveProduct = ProductHiveModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _nameCtrl.text.trim(),
-      category: _category,
-      stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
-      unit: _unitCtrl.text.trim(),
-      price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
-      description: _descCtrl.text.trim(),
-      thumbnail: null,
-      source: 'local',
-      status: (int.tryParse(_stockCtrl.text.trim()) ?? 0) > 20
-          ? 'Available'
-          : 'Low Stock',
-    );
+    // Generate thumbnail path if image was selected
+    String? thumbnailPath;
+    if (_selectedImageFile != null) {
+      // store actual local file path
+      thumbnailPath = _selectedImageFile!.path;
+    }
+    final editing = widget.productToEdit;
+    if (editing == null) {
+      final hiveProduct = ProductHiveModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _nameCtrl.text.trim(),
+        category: _category,
+        stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
+        unit: _unitCtrl.text.trim(),
+        price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
+        description: _descCtrl.text.trim(),
+        thumbnail: thumbnailPath,
+        source: 'local',
+        status: (int.tryParse(_stockCtrl.text.trim()) ?? 0) > 20
+            ? 'Available'
+            : 'Low Stock',
+      );
 
-    _controller.addProduct(hiveProduct);
+      _controller.addProduct(hiveProduct);
+    } else {
+      final updated = ProductHiveModel(
+        id: editing.id,
+        title: _nameCtrl.text.trim(),
+        category: _category,
+        stock: int.tryParse(_stockCtrl.text.trim()) ?? 0,
+        unit: _unitCtrl.text.trim(),
+        price: double.tryParse(_priceCtrl.text.trim()) ?? 0.0,
+        description: _descCtrl.text.trim(),
+        thumbnail: thumbnailPath ?? editing.thumbnail,
+        source: editing.source,
+        status: (int.tryParse(_stockCtrl.text.trim()) ?? 0) > 20
+            ? 'Available'
+            : 'Low Stock',
+      );
+
+      _controller.updateProduct(editing.id, updated);
+    }
 
     Get.back();
     Get.snackbar(
@@ -142,6 +240,67 @@ class _AddStockViewState extends State<AddStockView> {
                     child: ListView(
                       padding: const EdgeInsets.all(24),
                       children: [
+                        // Image Picker Section
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                height: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: _selectedImageFile != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.file(
+                                          _selectedImageFile!,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.image_outlined,
+                                            size: 48,
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Tap to add image',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                            if (_selectedImageFile != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: TextButton.icon(
+                                  onPressed: () =>
+                                      setState(() => _selectedImageFile = null),
+                                  icon: const Icon(Icons.delete_outline),
+                                  label: const Text('Remove Image'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
                         // Product Name
                         _buildLabel('📦 Product Name'),
                         const SizedBox(height: 8),
@@ -254,7 +413,8 @@ class _AddStockViewState extends State<AddStockView> {
                                     validator: (v) {
                                       if (v == null || v.trim().isEmpty) {
                                         return 'Required';
-                                      } if (int.tryParse(v.trim()) == null) {
+                                      }
+                                      if (int.tryParse(v.trim()) == null) {
                                         return 'Invalid number';
                                       }
                                       return null;

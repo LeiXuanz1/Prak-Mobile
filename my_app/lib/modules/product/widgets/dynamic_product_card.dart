@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
+import 'dart:io';
 
 class DynamicProductCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -16,6 +17,9 @@ class DynamicProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = _extractImageUrl();
+    final imageUrlOrPath = _extractImageUrl();
+    final isLocalFile =
+        imageUrlOrPath != null && imageUrlOrPath.startsWith('/');
     final title = _extractTitle();
     final subtitle = _extractSubtitle();
     final price = _extractPrice();
@@ -37,14 +41,22 @@ class DynamicProductCard extends StatelessWidget {
                   child: SizedBox(
                     width: 72,
                     height: 72,
-                    child: imageUrl != null && imageUrl.isNotEmpty
-                        ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            semanticLabel: title,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildSmallPlaceholder(),
-                          )
+                    child: imageUrlOrPath != null && imageUrlOrPath.isNotEmpty
+                        ? (isLocalFile
+                              ? Image.file(
+                                  File(imageUrlOrPath),
+                                  fit: BoxFit.cover,
+                                  semanticLabel: title,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _buildSmallPlaceholder(),
+                                )
+                              : Image.network(
+                                  imageUrlOrPath,
+                                  fit: BoxFit.cover,
+                                  semanticLabel: title,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _buildSmallPlaceholder(),
+                                ))
                         : _buildSmallPlaceholder(),
                   ),
                 ),
@@ -208,65 +220,73 @@ class DynamicProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(String? imageUrl) {
+  Widget _buildImageSection(String? imageUrlOrPath) {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: imageUrl != null && imageUrl.isNotEmpty
-          ? Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return _buildPlaceholder();
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
-            )
+      child: imageUrlOrPath != null && imageUrlOrPath.isNotEmpty
+          ? (!imageUrlOrPath.startsWith('http')
+                ? Image.file(
+                    File(imageUrlOrPath),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholder();
+                    },
+                  )
+                : Image.network(
+                    imageUrlOrPath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholder();
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                  ))
           : _buildPlaceholder(),
     );
   }
 
   Widget _buildPlaceholder() {
-  return Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          const Color(0xFF8B0000).withValues(alpha: 0.7),
-          const Color(0xFFD2691E).withValues(alpha: 0.7),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF8B0000).withValues(alpha: 0.7),
+            const Color(0xFFD2691E).withValues(alpha: 0.7),
+          ],
+        ),
       ),
-    ),
-    child: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.local_drink,
-            size: 40,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Kecap Product',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.local_drink,
+              size: 40,
+              color: Colors.white.withValues(alpha: 0.8),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              'Kecap Product',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildSmallPlaceholder() {
     return Container(
@@ -298,9 +318,13 @@ class DynamicProductCard extends StatelessWidget {
     for (var key in possibleKeys) {
       if (data.containsKey(key) && data[key] != null) {
         final value = data[key].toString();
-        if (value.isNotEmpty &&
-            (value.startsWith('http://') || value.startsWith('https://'))) {
-          return value;
+        if (value.isNotEmpty) {
+          // Accept HTTP URLs or local file paths
+          if (value.startsWith('http://') ||
+              value.startsWith('https://') ||
+              value.startsWith('/')) {
+            return value;
+          }
         }
       }
     }

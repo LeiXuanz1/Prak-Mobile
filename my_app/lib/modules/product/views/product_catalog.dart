@@ -87,10 +87,11 @@ class ProductCatalogSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final query = controller.searchQuery.value;
-      final all = controller.apiProducts;
+      final apiProductsMaps = controller.apiProducts;
+
       final products = query.isEmpty
-          ? all
-          : all.where((p) {
+          ? apiProductsMaps
+          : apiProductsMaps.where((p) {
               final title = p['title']?.toString().toLowerCase() ?? '';
               return title.contains(query.toLowerCase());
             }).toList();

@@ -32,33 +32,6 @@ class KecapAppBar extends StatelessWidget {
               end: Alignment.bottomRight,
             ),
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Kecap Store',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.notifications_outlined,
-                            color: theme.colorScheme.onPrimary),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
 
         title: Text(
