@@ -67,8 +67,8 @@ class SupabaseAddController extends GetxController {
     }
   }
 
-  /// Upload image to Supabase Storage
-  /// Returns the storage object path (e.g. "soy_sauces/abc123.jpg") or null on failure
+  // Upload image to Supabase Storage
+  // Returns the storage object path (e.g. "soy_sauces/abc123.jpg") or null on failure
   Future<String?> _uploadImageToStorage(File imageFile) async {
     try {
       uploadingImage.value = true;

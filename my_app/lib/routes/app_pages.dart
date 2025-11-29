@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:my_app/core/bindings/location_binding.dart';
+import 'package:my_app/modules/location/views/location_view.dart';
 import '/core/bindings/apify_bindings.dart';
 import '../modules/apify/views/apify_view.dart';
 import 'app_routes.dart';
@@ -19,6 +21,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.hiveProducts,
       page: () => HiveProductPage(),
+    ),
+    GetPage(
+      name: AppRoutes.location,
+      page: () => LocationView(),
+      binding: LocationBinding(),
     ),
   ];
 }

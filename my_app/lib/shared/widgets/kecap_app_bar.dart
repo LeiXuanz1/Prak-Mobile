@@ -65,6 +65,10 @@ class KecapAppBar extends StatelessWidget {
           tooltip: 'Go to supabase',
           onPressed: () => Get.toNamed('/supabase-products'),
         ),
+        IconButton(
+          icon: Icon(Icons.location_on, color: theme.colorScheme.onSurface,),
+          onPressed: () => Get.toNamed('/location'),
+        ),
       ],
     );
   }
