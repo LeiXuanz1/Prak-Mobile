@@ -2,13 +2,12 @@ import 'package:get/get.dart';
 import '../hive_boxes.dart';
 import '../hive_models/product_hive_model.dart';
 import '../../../modules/apify/controllers/apify_controller.dart';
+import '../../../core/services/notification_service.dart';
 
 class HiveProductController extends GetxController {
-  // LIST UTAMA (Model Asli)
   var products = <ProductHiveModel>[].obs;
-
-  // LIST VERSI MAP (Biasanya dipakai untuk UI API-style)
   RxList<Map<String, dynamic>> apiProducts = <Map<String, dynamic>>[].obs;
+  static const int lowStockThreshold = 5;
 
   // STATE
   RxString searchQuery = ''.obs;
@@ -20,9 +19,7 @@ class HiveProductController extends GetxController {
     loadProducts();
   }
 
-  // ================================================================
   // LOAD PRODUK DARI HIVE
-  // ================================================================
   void loadProducts() {
     loading.value = true;
 
@@ -35,6 +32,16 @@ class HiveProductController extends GetxController {
     // Simpan versi Map (misalkan UI butuh JSON-like)
     apiProducts.value = productList.map((p) => p.toMap()).toList();
 
+    for (final p in productList) {
+      if (p.stock <= lowStockThreshold) {
+        NotificationService.showLowStock(
+          productId: p.id,
+          title: p.title,
+          stock: p.stock,
+        );
+      }
+    }
+
     loading.value = false;
   }
 
@@ -46,7 +53,7 @@ class HiveProductController extends GetxController {
     // reload list
     loadProducts();
 
-    // Add a recent activity so UI shows change in Recent Activity section
+    // Add a recent activity
     try {
       final apify = Get.find<ApifyController>();
       apify.addRecentActivity({
@@ -57,7 +64,6 @@ class HiveProductController extends GetxController {
         'timestamp': DateTime.now().toIso8601String(),
       });
     } catch (_) {
-      // If ApifyController isn't available for some reason, silently ignore
     }
   }
 

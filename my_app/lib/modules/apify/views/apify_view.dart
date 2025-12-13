@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/apify_controller.dart';
-import '../../product/views/hive/hive_add_view.dart';
 
 // widgets
 import '../../../shared/widgets/kecap_app_bar.dart';
@@ -69,12 +68,6 @@ class ApifyView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.to(() => const HiveAddView()),
-        backgroundColor: const Color(0xFFFF6B00),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Produk'),
       ),
     );
   }
