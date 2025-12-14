@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_routes.dart';
 
+@pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('[BACKGROUND] Payload: ${message.data}');
 }
@@ -32,10 +34,20 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
-        print('Local notification tapped. Payload: $payload');
+        final notificationResponse = response;
 
+        print('Local notification tapped. Payload: $payload');
+        print('Notification id: ${notificationResponse.id}');
+
+        // Route based on channel id
+        // foreground_channel → Go to Home (no payload routing)
+        // low_stock_channel → Go to HiveProducts with payload
         if (payload != null) {
+          // For low_stock_channel notifications with productId payload
           Get.toNamed(AppRoutes.hiveProducts, arguments: payload);
+        } else {
+          // For foreground_channel notifications (no productId) or other cases
+          print('No payload or foreground channel - staying on current page');
         }
       },
     );
@@ -45,18 +57,29 @@ class NotificationService {
     // FOREGROUND
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
 
-    // BACKGROUND
+    // BACKGROUND (user taps notification while app in background)
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      final pid = message.data['productId'];
+      print('[BACKGROUND MESSAGE] Received: ${message.data}');
 
+      final pid = message.data['productId'];
+      final androidChannelId = message.data['android_channel_id'] ?? '';
+
+      print('Android channel id from data: $androidChannelId');
+      print('Product id: $pid');
+
+      // If foreground_channel: don't navigate (just open app to current page)
+      if (androidChannelId.contains('foreground_channel')) {
+        print('foreground_channel detected - no navigation');
+        return;
+      }
+
+      // If low_stock_channel or other channels with productId: navigate to HiveProducts
       if (pid != null) {
-        // Try to navigate immediately (app is in background and should have navigation ready).
-        // If Get isn't ready yet for some reason, fall back to storing pendingProductId
-        // so `NotificationController.onReady` can handle it on app resume/init.
+        NotificationService.pendingProductId = pid;
         try {
           Get.toNamed(AppRoutes.hiveProducts, arguments: pid);
-        } catch (e) {
-          NotificationService.pendingProductId = pid;
+        } catch (_) {
+          print('Navigation deferred; NotificationController will handle it.');
         }
       }
     });
@@ -75,6 +98,8 @@ class NotificationService {
       'Foreground Notification',
       description: 'Notifikasi saat aplikasi dibuka',
       importance: Importance.high,
+      sound: RawResourceAndroidNotificationSound('hidup'),
+      playSound: true,
     );
 
     const lowStockChannel = AndroidNotificationChannel(
@@ -82,6 +107,8 @@ class NotificationService {
       'Low Stock Notification',
       description: 'Notifikasi stok menipis',
       importance: Importance.high,
+      sound: RawResourceAndroidNotificationSound('hidup'),
+      playSound: true,
     );
 
     final androidPlugin = _local
@@ -89,8 +116,19 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >();
 
+    try {
+      await androidPlugin?.deleteNotificationChannel(_foregroundChannelId);
+      await androidPlugin?.deleteNotificationChannel(_lowStockChannelId);
+      print('Existing notification channels deleted (dev).');
+    } catch (e) {
+      print('No existing channels to delete or deletion failed: $e');
+    }
+
     await androidPlugin?.createNotificationChannel(foregroundChannel);
     await androidPlugin?.createNotificationChannel(lowStockChannel);
+    print(
+      'Notification channels created: $_foregroundChannelId, $_lowStockChannelId',
+    );
   }
 
   static Future<void> _onForegroundMessage(RemoteMessage message) async {
@@ -104,17 +142,29 @@ class NotificationService {
       'Foreground Notification',
       importance: Importance.max,
       priority: Priority.high,
+      sound: RawResourceAndroidNotificationSound('hidup'),
+      playSound: true,
     );
 
     const details = NotificationDetails(android: androidDetails);
 
-    await _local.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      details,
-      payload: message.data['productId'],
-    );
+    try {
+      print(
+        'Showing local notification with custom sound (foreground_channel).',
+      );
+      // Foreground channel notifications: NO payload (so tapping won't navigate)
+      await _local.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        details,
+        payload:
+            null, // No payload for foreground_channel = stay on current page
+      );
+      print('Foreground notification shown.');
+    } catch (e) {
+      print('Failed to show foreground notification: $e');
+    }
   }
 
   static Future<void> showLowStock({
@@ -143,5 +193,42 @@ class NotificationService {
       details,
       payload: productId,
     );
+  }
+
+  /// Check if stock just went below threshold (first time).
+  /// Returns true only if: current stock < threshold AND last known stock >= threshold
+  static Future<bool> shouldShowLowStockAlert({
+    required String productId,
+    required int currentStock,
+    required int threshold,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastKnownStockKey = 'last_stock_$productId';
+
+      // Get last known stock (default: threshold, meaning first time)
+      final lastStock = prefs.getInt(lastKnownStockKey) ?? threshold;
+
+      // Save current stock for next check
+      await prefs.setInt(lastKnownStockKey, currentStock);
+
+      // Show alert only if: current < threshold AND last >= threshold
+      final shouldShow = (currentStock < threshold) && (lastStock >= threshold);
+
+      if (shouldShow) {
+        print(
+          'Low stock alert TRIGGERED for $productId (was $lastStock, now $currentStock)',
+        );
+      } else {
+        print(
+          'Low stock alert SKIPPED for $productId (was $lastStock, now $currentStock)',
+        );
+      }
+
+      return shouldShow;
+    } catch (e) {
+      print('Error checking low stock: $e');
+      return false;
+    }
   }
 }

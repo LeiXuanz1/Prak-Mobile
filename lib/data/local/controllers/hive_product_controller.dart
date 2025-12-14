@@ -32,17 +32,34 @@ class HiveProductController extends GetxController {
     // Simpan versi Map (misalkan UI butuh JSON-like)
     apiProducts.value = productList.map((p) => p.toMap()).toList();
 
+    // Check low stock — hanya trigger notifikasi jika stok BARU SAJA turun di bawah threshold
     for (final p in productList) {
-      if (p.stock <= lowStockThreshold) {
-        NotificationService.showLowStock(
-          productId: p.id,
-          title: p.title,
-          stock: p.stock,
-        );
-      }
+      _checkAndShowLowStockAlert(p.id, p.title, p.stock);
     }
 
     loading.value = false;
+  }
+
+  /// Check if stock just dropped below threshold (first time).
+  /// Only show notification if: current stock < threshold AND last known stock >= threshold
+  Future<void> _checkAndShowLowStockAlert(
+    String productId,
+    String title,
+    int currentStock,
+  ) async {
+    final shouldShow = await NotificationService.shouldShowLowStockAlert(
+      productId: productId,
+      currentStock: currentStock,
+      threshold: lowStockThreshold,
+    );
+
+    if (shouldShow) {
+      await NotificationService.showLowStock(
+        productId: productId,
+        title: title,
+        stock: currentStock,
+      );
+    }
   }
 
   // TAMBAH PRODUK
@@ -63,8 +80,7 @@ class HiveProductController extends GetxController {
         'timeAgo': 'just now',
         'timestamp': DateTime.now().toIso8601String(),
       });
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   // HAPUS PRODUK

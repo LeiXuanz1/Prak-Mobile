@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'core/bindings/initial_bindings.dart';
 import 'core/services/theme_controller.dart';
 import '/routes/app_pages.dart';
