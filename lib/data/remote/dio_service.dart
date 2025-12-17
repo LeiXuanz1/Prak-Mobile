@@ -24,7 +24,6 @@ class DioService implements ApiService {
             response.data = jsonDecode(response.data);
           }
 
-          // final bytes = response.data.toString().length;
           return handler.next(response);
         },
         onError: (DioException e, handler) {

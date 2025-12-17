@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_app/modules/auth/controllers/auth_controller.dart';
+import 'package:my_app/routes/app_pages.dart';
+import 'package:my_app/routes/app_routes.dart';
 import 'core/bindings/initial_bindings.dart';
 import 'core/services/theme_controller.dart';
-import '/routes/app_pages.dart';
-import '/routes/app_routes.dart';
 import 'data/local/hive_boxes.dart';
 import 'data/cloud/supabase_service.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
   await SupabaseService.init();
   await NotificationService.init();
 
+  Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
 
   runApp(MyApp());
@@ -36,12 +38,28 @@ class MyApp extends StatelessWidget {
       return GetMaterialApp(
         debugShowCheckedModeBanner: false,
 
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: const Color(0xFF2E7D32),
+          scaffoldBackgroundColor: const Color(0xFFF9FAF9),
+
+          inputDecorationTheme: const InputDecorationTheme(
+            filled: true,
+            fillColor: Color(0xFFF1F5F2),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+          ),
+        ),
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: const Color(0xFF2E7D32),
+          brightness: Brightness.dark,
+        ),
         themeMode: theme.themeMode,
 
         initialBinding: InitialBindings(),
-        initialRoute: AppRoutes.apify,
+        initialRoute: AppRoutes.login,
         getPages: AppPages.routes,
       );
     });

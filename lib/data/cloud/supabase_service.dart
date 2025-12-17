@@ -20,6 +20,9 @@ class SupabaseService {
 
     client = Supabase.instance.client;
     await testConnection();
+
+    print(dotenv.env['SUPABASE_URL']);
+    print(dotenv.env['SUPABASE_ANON_KEY']?.substring(0, 10));
   }
 
   // Quick test

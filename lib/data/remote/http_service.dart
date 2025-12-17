@@ -8,7 +8,6 @@ import 'api_service.dart';
 import '../../core/constants/api_constants.dart';
 
 class HttpService implements ApiService {
-  // GET request dengan input (tidak dipakai body karena pakai GET)
   Future<ApiResult> runActorWithInput(Map<String, dynamic> input) async {
     final stopwatch = Stopwatch()..start();
 
@@ -25,8 +24,6 @@ class HttpService implements ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         try {
           final data = jsonDecode(body);
-
-          // langsung parse ke ApifyResult
           final apifyData = ApifyResult.fromJson(data);
 
           return ApiResult(

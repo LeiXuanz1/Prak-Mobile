@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeController extends GetxController {
+  static const _key = 'isDarkMode';
+
   final _isDark = false.obs;
 
   bool get isDark => _isDark.value;
 
-  ThemeMode get themeMode => _isDark.value ? ThemeMode.light : ThemeMode.dark;
+  ThemeMode get themeMode =>
+      _isDark.value ? ThemeMode.dark : ThemeMode.light;
 
   @override
   void onInit() {
@@ -15,14 +18,14 @@ class ThemeController extends GetxController {
     _loadTheme();
   }
 
-  void _loadTheme() async {
+  Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark.value = prefs.getBool("isDark") ?? false;
+    _isDark.value = prefs.getBool(_key) ?? false;
   }
 
-  void toggleTheme() async {
+  Future<void> toggleTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark.value = !_isDark.value;
-    prefs.setBool("isDark", _isDark.value);
+    _isDark.toggle();
+    await prefs.setBool(_key, _isDark.value);
   }
 }

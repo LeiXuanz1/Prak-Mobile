@@ -7,20 +7,51 @@ class QuickActions extends StatelessWidget {
   final ApifyController controller;
   const QuickActions({super.key, required this.controller});
 
-  Widget _actionCard(IconData icon, String label, Color color, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+  Widget _actionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 24)),
-            const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87), textAlign: TextAlign.center),
-          ]),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // 🔑 penting
+            children: [
+              Container(
+                height: 48, // M3 min touch target
+                width: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: theme.colorScheme.onPrimaryContainer,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -28,17 +59,32 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 4,
+    return GridView.extent(
+      maxCrossAxisExtent: 120, // adaptive, M3 friendly
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
-        _actionCard(Icons.add_circle, 'Add Product', const Color(0xFFFF6B00), () => Get.to(() => const AddStockView())),
-        _actionCard(Icons.search, 'Search', const Color(0xFF2196F3), () {}),
-        _actionCard(Icons.bar_chart, 'Reports', const Color(0xFF9C27B0), () {}),
-        _actionCard(Icons.analytics, 'Analytics', const Color(0xFF4CAF50), () {}),
+        _actionCard(
+          context,
+          icon: Icons.add_circle_outline,
+          label: 'Add Product',
+          onTap: () => Get.to(() => const AddStockView()),
+        ),
+        _actionCard(context, icon: Icons.search, label: 'Search', onTap: () {}),
+        _actionCard(
+          context,
+          icon: Icons.bar_chart_outlined,
+          label: 'Reports',
+          onTap: () {},
+        ),
+        _actionCard(
+          context,
+          icon: Icons.analytics_outlined,
+          label: 'Analytics',
+          onTap: () {},
+        ),
       ],
     );
   }
