@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/supabase_product_controller.dart';
 import '../../../../data/cloud/supabase_service.dart';
 import 'supabase_add_view.dart';
+import 'dart:io';
 
 class SupabaseProductPage extends StatelessWidget {
   SupabaseProductPage({super.key});
@@ -116,42 +117,18 @@ class _ProductThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final thumbRaw = item['thumbnail'];
-    String? imageUrl;
+    final raw = item['thumbnail']?.toString().trim();
 
-    String? sanitizePath(Object? p) {
-      if (p == null) return null;
-      var s = p.toString().trim();
-      if (s.isEmpty) return null;
-      return s.replaceAll(RegExp(r'^/+'), '');
+    if (raw == null || raw.isEmpty) {
+      return _placeholder(theme);
     }
 
-    if (thumbRaw != null &&
-        thumbRaw.toString().toLowerCase().startsWith('http')) {
-      imageUrl = thumbRaw.toString().trim();
-    }
-
-    final tp = sanitizePath(thumbRaw);
-
-    if (tp != null && imageUrl == null) {
-      final encoded = tp
-          .split('/')
-          .map(Uri.encodeComponent)
-          .join('/');
-
-      try {
-        imageUrl = SupabaseService.client.storage
-            .from('product-image')
-            .getPublicUrl(encoded)
-            .toString();
-      } catch (_) {}
-    }
-
-    if (imageUrl != null && imageUrl.isNotEmpty) {
+    // 1️⃣ LOCAL FILE
+    if (raw.startsWith('/')) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          imageUrl,
+        child: Image.file(
+          File(raw),
           width: 56,
           height: 56,
           fit: BoxFit.cover,
@@ -160,7 +137,41 @@ class _ProductThumbnail extends StatelessWidget {
       );
     }
 
-    return _placeholder(theme);
+    // 2️⃣ FULL URL
+    if (raw.startsWith('http')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          raw,
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _placeholder(theme),
+        ),
+      );
+    }
+
+    // 3️⃣ SUPABASE STORAGE PATH
+    final encoded = raw
+        .replaceAll(RegExp(r'^/+'), '')
+        .split('/')
+        .map(Uri.encodeComponent)
+        .join('/');
+
+    final url = SupabaseService.client.storage
+        .from('kecap-images')
+        .getPublicUrl(encoded);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        url,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _placeholder(theme),
+      ),
+    );
   }
 
   Widget _placeholder(ThemeData theme) {

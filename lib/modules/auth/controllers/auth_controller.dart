@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 
 class AuthController extends GetxController {
@@ -17,11 +18,15 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
 
-    _authService.onAuthStateChanged((session) {
+    _authService.onAuthStateChanged((session) async {
       print('AUTH EVENT: ${session != null}');
 
       isLoggedIn.value = session != null;
       isLoading.value = false;
+
+      if (session != null) {
+        await _authService.ensureProfile();
+      }
     });
   }
 
@@ -53,6 +58,7 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
       await _authService.login(email: email, password: password);
+      await _authService.ensureProfile();
       isLoggedIn.value = true;
       return true;
     } catch (e) {
@@ -78,8 +84,14 @@ class AuthController extends GetxController {
 
     try {
       isLoading.value = true;
+
       await _authService.register(email: email, password: password);
+      await _authService.ensureProfile();
+
       return true;
+    } on AuthException catch (e) {
+      generalError.value = e.message;
+      return false;
     } catch (e) {
       generalError.value = 'Registrasi gagal';
       return false;

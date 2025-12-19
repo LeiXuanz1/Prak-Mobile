@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_app/core/services/app_lifecycle_service.dart';
+import 'package:my_app/core/services/connectvity_service.dart';
+import 'package:my_app/data/sync/product_sync_service.dart';
 import 'package:my_app/modules/auth/controllers/auth_controller.dart';
 import 'package:my_app/routes/app_pages.dart';
 import 'package:my_app/routes/app_routes.dart';
@@ -17,6 +20,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  final lifecycle = AppLifecycleService();
+  WidgetsBinding.instance.addObserver(lifecycle);
+
   await dotenv.load(fileName: ".env");
   await Hive.initFlutter();
   await HiveBoxes.init();
@@ -25,6 +31,15 @@ Future<void> main() async {
 
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
+
+  ConnectivityService.listen(
+    onOnline: () async {
+      await ProductSyncService.sync();
+    },
+    onOffline: () {
+      print('Offline mode');
+    },
+  );
 
   runApp(MyApp());
 }

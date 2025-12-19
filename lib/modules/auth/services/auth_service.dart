@@ -13,14 +13,10 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await _client.auth.signUp(
+    await _client.auth.signUp(
       email: email,
       password: password,
     );
-
-    if (response.user == null) {
-      throw Exception('Register gagal');
-    }
   }
 
   Future<void> login({required String email, required String password}) async {
@@ -30,6 +26,25 @@ class AuthService {
   Future<void> logout() async {
     await _client.auth.signOut();
   }
+
+  Future<void> ensureProfile() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final profile = await Supabase.instance.client
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile == null) {
+      await Supabase.instance.client.from('profiles').insert({
+        'id': user.id,
+        'email': user.email,
+      });
+    }
+  }
+
 
   bool get isLoggedIn => _client.auth.currentSession != null;
 }

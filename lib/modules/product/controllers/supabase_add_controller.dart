@@ -17,7 +17,7 @@ class SupabaseAddController extends GetxController {
 
   final ImagePicker _imagePicker = ImagePicker();
 
-  /// Pick image from gallery/camera
+  // Pick image from gallery/camera
   Future<void> pickImage() async {
     try {
       final pickedFile = await _imagePicker.pickImage(
@@ -82,7 +82,7 @@ class SupabaseAddController extends GetxController {
       // Upload to Supabase Storage
       final bytes = await imageFile.readAsBytes();
       await SupabaseService.client.storage
-          .from('product-image')
+          .from('kecap-images')
           .uploadBinary(storagePath, bytes);
 
       return storagePath;
@@ -101,6 +101,7 @@ class SupabaseAddController extends GetxController {
   }
 
   Future<void> submit() async {
+    print('SUBMIT DIPANGGIL');
     isLoading.value = true;
     try {
       // Create a simple slug from the display name
@@ -110,6 +111,7 @@ class SupabaseAddController extends GetxController {
           .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
           .replaceAll(RegExp(r'(^-+|-+$)'), '');
 
+      print('SEBELUM UPLOAD IMAGE');
       // Upload image if selected
       String? thumbnailStoragePath;
       if (selectedImageFile.value != null) {
@@ -118,7 +120,8 @@ class SupabaseAddController extends GetxController {
         );
         if (thumbnailStoragePath == null) {
           // Upload failed, snackbar already shown
-          return;
+          print('UPLOAD GAGAL, SUBMIT BERHENTI');
+          throw Exception('Upload image gagal');
         }
       }
 
@@ -139,7 +142,8 @@ class SupabaseAddController extends GetxController {
       };
 
       try {
-        await SupabaseService.insertSoySauce(row);
+        final res = await SupabaseService.insertSoySauce(row);
+        print('INSERTED ROW => $res');
       } catch (e) {
         // Bubble error to UI with a visible snackbar and rethrow so caller may inspect.
         Get.snackbar(

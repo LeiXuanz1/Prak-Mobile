@@ -3,6 +3,8 @@ import '../hive_boxes.dart';
 import '../hive_models/product_hive_model.dart';
 import '../../../modules/apify/controllers/apify_controller.dart';
 import '../../../core/services/notification_service.dart';
+import 'package:my_app/core/services/connectvity_service.dart';
+import 'package:my_app/data/sync/product_sync_service.dart';
 
 class HiveProductController extends GetxController {
   var products = <ProductHiveModel>[].obs;
@@ -24,7 +26,8 @@ class HiveProductController extends GetxController {
     loading.value = true;
 
     final box = HiveBoxes.products;
-    final productList = box.values.toList();
+
+    final productList = box.values.where((p) => p.isDeleted == false).toList();
 
     // Simpan versi model
     products.assignAll(productList);
@@ -32,7 +35,7 @@ class HiveProductController extends GetxController {
     // Simpan versi Map (misalkan UI butuh JSON-like)
     apiProducts.value = productList.map((p) => p.toMap()).toList();
 
-    // Check low stock — hanya trigger notifikasi jika stok BARU SAJA turun di bawah threshold
+    // Check low stock
     for (final p in productList) {
       _checkAndShowLowStockAlert(p.id, p.title, p.stock);
     }
@@ -40,8 +43,8 @@ class HiveProductController extends GetxController {
     loading.value = false;
   }
 
-  /// Check if stock just dropped below threshold (first time).
-  /// Only show notification if: current stock < threshold AND last known stock >= threshold
+  // Check if stock just dropped below threshold (first time).
+  // Only show notification if: current stock < threshold AND last known stock >= threshold
   Future<void> _checkAndShowLowStockAlert(
     String productId,
     String title,
@@ -70,6 +73,8 @@ class HiveProductController extends GetxController {
     // reload list
     loadProducts();
 
+    _trySync();
+
     // Add a recent activity
     try {
       final apify = Get.find<ApifyController>();
@@ -86,17 +91,55 @@ class HiveProductController extends GetxController {
   // HAPUS PRODUK
   Future<void> deleteProduct(String id) async {
     final box = HiveBoxes.products;
-    await box.delete(id);
+    final old = box.get(id);
+    if (old == null) return;
+
+    final deleted = ProductHiveModel(
+      id: old.id,
+      title: old.title,
+      category: old.category,
+      stock: old.stock,
+      unit: old.unit,
+      price: old.price,
+      description: old.description,
+      thumbnail: old.thumbnail,
+      source: old.source,
+      status: old.status,
+      updatedAt: DateTime.now(),
+      isSynced: false,
+      isDeleted: true,
+    );
+
+    await box.put(id, deleted);
 
     loadProducts();
+    _trySync();
   }
 
   // UPDATE PRODUK
   Future<void> updateProduct(String id, ProductHiveModel product) async {
     final box = HiveBoxes.products;
-    await box.put(id, product);
+
+    final updated = ProductHiveModel(
+      id: product.id,
+      title: product.title,
+      category: product.category,
+      stock: product.stock,
+      unit: product.unit,
+      price: product.price,
+      description: product.description,
+      thumbnail: product.thumbnail,
+      source: 'local',
+      status: product.status,
+      updatedAt: DateTime.now(),
+      isSynced: false,
+      isDeleted: false,
+    );
+
+    await box.put(id, updated);
 
     loadProducts();
+    _trySync();
 
     // Log recent activity for update
     try {
@@ -126,7 +169,7 @@ class HiveProductController extends GetxController {
     return apiProducts
         .where(
           (p) =>
-              p['name'].toString().toLowerCase().contains(
+              p['title'].toString().toLowerCase().contains(
                 searchQuery.value.toLowerCase(),
               ) ||
               p['category'].toString().toLowerCase().contains(
@@ -134,5 +177,14 @@ class HiveProductController extends GetxController {
               ),
         )
         .toList();
+  }
+
+  Future<void> _trySync() async {
+    try {
+      final online = await ConnectivityService.isOnline();
+      if (online) {
+        await ProductSyncService.sync();
+      }
+    } catch (_) {}
   }
 }
