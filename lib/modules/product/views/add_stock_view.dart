@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
-import 'package:my_app/data/local/hive_models/product_hive_model.dart';
+import 'package:my_app/data/local/models/product_hive_model.dart';
 
 class AddStockView extends StatefulWidget {
   final ProductHiveModel? productToEdit;

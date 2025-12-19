@@ -4,6 +4,7 @@ import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/modules/product/widgets/dynamic_product_card.dart';
 import 'package:my_app/modules/apify/controllers/apify_controller.dart';
 import 'package:my_app/modules/product/views/add_stock_view.dart';
+import 'package:my_app/utils/helpers.dart';
 
 class ProductCatalogSection extends StatelessWidget {
   final HiveProductController controller;
@@ -11,6 +12,12 @@ class ProductCatalogSection extends StatelessWidget {
 
   void _showProductDetail(BuildContext context, Map<String, dynamic> product) {
     final cs = Theme.of(context).colorScheme;
+
+    // Format price as Rupiah
+    final priceValue = product['price'];
+    final formattedPrice = priceValue != null
+        ? Helpers.formatCurrency(priceValue)
+        : '-';
 
     showDialog(
       context: context,
@@ -26,16 +33,8 @@ class ProductCatalogSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _detailRow(context, 'Category', product['category'] ?? '-'),
-              _detailRow(
-                context,
-                'Price',
-                product['price']?.toString() ?? '-',
-              ),
-              _detailRow(
-                context,
-                'Stock',
-                product['stock']?.toString() ?? '-',
-              ),
+              _detailRow(context, 'Price', formattedPrice),
+              _detailRow(context, 'Stock', product['stock']?.toString() ?? '-'),
               _detailRow(context, 'Status', product['status'] ?? '-'),
             ],
           ),
@@ -80,15 +79,9 @@ class ProductCatalogSection extends StatelessWidget {
         children: [
           Text(
             '$label:',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface),
           ),
-          Text(
-            value,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
+          Text(value, style: TextStyle(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -109,126 +102,123 @@ class ProductCatalogSection extends StatelessWidget {
               return title.contains(query.toLowerCase());
             }).toList();
 
-      return Card(
-        elevation: 0,
-        color: cs.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            // HEADER
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.primary,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.inventory_2, color: cs.onPrimary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Product Catalog',
-                    style: TextStyle(
-                      color: cs.onPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+      return Column(
+        children: [
+          // SEARCH BAR - OUTSIDE CARD
+          TextField(
+            onChanged: (v) => controller.searchQuery.value = v,
+            decoration: InputDecoration(
+              hintText: 'Search products',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: cs.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: BorderSide.none,
               ),
             ),
+          ),
+          const SizedBox(height: 16),
 
-            // CONTENT 
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // SEARCH
-                    TextField(
-                      onChanged: (v) => controller.searchQuery.value = v,
-                      decoration: InputDecoration(
-                        hintText: 'Search products',
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        fillColor: cs.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide.none,
-                        ),
+          // CARD
+          Expanded(
+            child: Card(
+              elevation: 0,
+              color: cs.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  // HEADER
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.inventory_2, color: cs.onPrimary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Product Catalog',
+                          style: TextStyle(
+                            color: cs.onPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                    // LIST
-                    Expanded(
+                  // CONTENT
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
                       child: controller.loading.value
                           ? const Center(child: CircularProgressIndicator())
                           : products.isEmpty
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.inbox,
-                                      size: 64,
-                                      color: cs.outlineVariant,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'No products found',
-                                      style: TextStyle(
-                                        color: cs.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : GridView.builder(
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inbox,
+                                  size: 64,
+                                  color: cs.outlineVariant,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No products found',
+                                  style: TextStyle(color: cs.onSurfaceVariant),
+                                ),
+                              ],
+                            )
+                          : GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 12,
                                     mainAxisSpacing: 12,
                                     childAspectRatio: 0.75,
                                   ),
-                                  itemCount: products.length,
-                                  itemBuilder: (context, index) {
-                                    final map = products[index];
-                                    return Stack(
-                                      children: [
-                                        DynamicProductCard(
-                                          data: map,
-                                          compact: false,
-                                          onTap: () =>
-                                              _showProductDetail(context, map),
-                                        ),
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final map = products[index];
+                                return Stack(
+                                  children: [
+                                    DynamicProductCard(
+                                      data: map,
+                                      compact: false,
+                                      onTap: () =>
+                                          _showProductDetail(context, map),
+                                    ),
 
-                                        // DELETE BUTTON
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: IconButton.filledTonal(
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                            ),
-                                            onPressed: () {
-                                              _confirmDelete(context, map);
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
+                                    // DELETE BUTTON
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: IconButton.filledTonal(
+                                        icon: const Icon(Icons.delete_outline),
+                                        onPressed: () {
+                                          _confirmDelete(context, map);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     });
   }
@@ -263,16 +253,11 @@ class ProductCatalogSection extends StatelessWidget {
 
               Navigator.pop(context);
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Product deleted'),
-                ),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Product deleted')));
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

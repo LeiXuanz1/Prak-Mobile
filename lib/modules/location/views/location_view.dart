@@ -10,10 +10,15 @@ class LocationView extends GetView<LocationController> {
   final LocationPermissionController permissionController =
       Get.find<LocationPermissionController>();
 
+  final bool isPickerMode;
+  final Function(double, double)? onLocationSelected;
+
+  LocationView({this.isPickerMode = false, this.onLocationSelected});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("OpenStreet")),
+      appBar: AppBar(title: Text(isPickerMode ? "Pilih Lokasi" : "OpenStreet")),
       body: Obx(() {
         if (!permissionController.permissionGranted.value) {
           return const Center(
@@ -25,27 +30,49 @@ class LocationView extends GetView<LocationController> {
         }
 
         final loc = controller.currentLocation.value;
-        
+
         if (loc == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
         return Stack(
           children: [
-            MapWidget(
-              mapController: controller.mapController,
-            ),
+            MapWidget(mapController: controller.mapController),
 
-            Positioned(
-              bottom: 140,
-              left: 20,
-              right: 20,
-              child: LocationInfoCard(),
-            ),
+            if (!isPickerMode)
+              Positioned(
+                bottom: 140,
+                left: 20,
+                right: 20,
+                child: LocationInfoCard(),
+              ),
+
+            // Picker mode: Show confirm button
+            if (isPickerMode)
+              Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (onLocationSelected != null) {
+                        onLocationSelected!(
+                          controller.currentLocation.value!.latitude,
+                          controller.currentLocation.value!.longitude,
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.check),
+                    label: const Text('Pilih Lokasi Ini'),
+                  ),
+                ),
+              ),
           ],
         );
       }),
-      floatingActionButton: LocationFabControls(),
+      floatingActionButton: !isPickerMode ? LocationFabControls() : null,
     );
   }
 }

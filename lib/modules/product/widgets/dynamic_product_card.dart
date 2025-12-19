@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'dart:io';
+import 'package:my_app/utils/helpers.dart';
 
 class DynamicProductCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -177,42 +177,48 @@ class DynamicProductCard extends StatelessWidget {
                         ),
                       ),
 
-                      const Spacer(),
+                    const Spacer(),
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          if (price != null)
-                            Text(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (price != null)
+                          Expanded(
+                            child: Text(
                               price,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
-                          if (stock != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getStockColor(stock)
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Stock: $stock',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: _getStockColor(stock),
-                                ),
+                          ),
+                        if (stock != null) const SizedBox(width: 8),
+                        if (stock != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStockColor(
+                                stock,
+                              ).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Stock: $stock',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _getStockColor(stock),
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -400,7 +406,7 @@ class DynamicProductCard extends StatelessWidget {
       if (data.containsKey(key) && data[key] != null) {
         final value = data[key];
         if (value is num) {
-          return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+          return Helpers.formatCurrency(value);
         } else if (value is String && value.isNotEmpty) {
           return value;
         }

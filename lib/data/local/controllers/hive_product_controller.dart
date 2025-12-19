@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../hive_boxes.dart';
-import '../hive_models/product_hive_model.dart';
+import '../models/product_hive_model.dart';
 import '../../../modules/apify/controllers/apify_controller.dart';
 import '../../../core/services/notification_service.dart';
 

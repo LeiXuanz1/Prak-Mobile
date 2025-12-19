@@ -59,33 +59,35 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.extent(
-      maxCrossAxisExtent: 120, // adaptive, M3 friendly
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        _actionCard(
-          context,
-          icon: Icons.add_circle_outline,
-          label: 'Add Product',
-          onTap: () => Get.to(() => const AddStockView()),
-        ),
-        _actionCard(context, icon: Icons.search, label: 'Search', onTap: () {}),
-        _actionCard(
-          context,
-          icon: Icons.bar_chart_outlined,
-          label: 'Reports',
-          onTap: () {},
-        ),
-        _actionCard(
-          context,
-          icon: Icons.analytics_outlined,
-          label: 'Analytics',
-          onTap: () {},
-        ),
-      ],
+    return SizedBox(
+      height: 150,
+      child: GridView.extent(
+        maxCrossAxisExtent: 120,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _actionCard(
+            context,
+            icon: Icons.add_circle_outline,
+            label: 'Add Product',
+            onTap: () => Get.to(() => const AddStockView()),
+          ),
+          _actionCard(
+            context,
+            icon: Icons.bar_chart_outlined,
+            label: 'Reports',
+            onTap: () {},
+          ),
+          _actionCard(
+            context,
+            icon: Icons.analytics_outlined,
+            label: 'Analytics',
+            onTap: () {},
+          ),
+        ],
+      ),
     );
   }
 }

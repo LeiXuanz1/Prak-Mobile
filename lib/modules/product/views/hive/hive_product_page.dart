@@ -20,7 +20,11 @@ class HiveProductPage extends StatelessWidget {
 
       body: Padding(
         padding: const EdgeInsets.all(12),
-        child: ProductCatalogSection(controller: controller),
+        child: Column(
+          children: [
+            Expanded(child: ProductCatalogSection(controller: controller)),
+          ],
+        ),
       ),
 
       floatingActionButton: FloatingActionButton.extended(
