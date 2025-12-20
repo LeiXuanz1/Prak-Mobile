@@ -546,6 +546,7 @@ class _LineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Prevent NaN: guard check for invalid maxValue
     if (data.isEmpty || !maxValue.isFinite || maxValue <= 0) return;
 
     final paint = Paint()
