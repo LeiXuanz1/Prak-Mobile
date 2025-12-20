@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "548693770600",
+    "project_id": "kecap-7b158",
+    "storage_bucket": "kecap-7b158.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:548693770600:android:4564f09bc0d8352dc1d6dd",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXpP7BOUsBmbTN6C6wd6Bgsk_1-rR6l3o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
