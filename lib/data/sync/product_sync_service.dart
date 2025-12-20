@@ -11,8 +11,7 @@ class ProductSyncService {
     print('AUTH USER: ${user?.id}');
     print('SUPABASE SESSION: ${session?.user.id}');
 
-    // Proceed with sync if Supabase client is initialized. Do not abort silently
-    // when there's no authenticated user; anonymous/anon-key operations are allowed
+    // Proceed with sync - no auth gate to enable automatic sync
     print('SYNC START');
     await _pushLocalToSupabase();
     await _pullSupabaseToLocal();
