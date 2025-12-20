@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/stock_analytics_controller.dart';
+import '../../stock/controllers/stock_analytics_controller.dart';
 
 class StockAnalyticsView extends StatelessWidget {
   const StockAnalyticsView({super.key});

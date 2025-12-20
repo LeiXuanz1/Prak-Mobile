@@ -4,11 +4,16 @@ import '../controllers/contact_controller.dart';
 import '../../location/views/location_view.dart';
 import '../../location/controllers/location_controller.dart';
 import '../../location/controllers/location_permission_controller.dart';
+import '../../../data/local/models/contact_hive_model.dart';
+import '../../location/models/location_model.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class AddContactView extends StatelessWidget {
   final controller = Get.put(ContactController());
+  final ContactHiveModel? editingContact;
 
-  AddContactView({Key? key}) : super(key: key);
+  AddContactView({Key? key, this.editingContact}) : super(key: key);
 
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -25,9 +30,26 @@ class AddContactView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Populate form if editing
+    if (editingContact != null) {
+      nameController.text = editingContact!.name;
+      phoneController.text = editingContact!.phone ?? '';
+      emailController.text = editingContact!.email ?? '';
+      addressController.text = editingContact!.address ?? '';
+      if (editingContact!.latitude != null &&
+          editingContact!.longitude != null) {
+        selectedLatitude.value = editingContact!.latitude;
+        selectedLongitude.value = editingContact!.longitude;
+        selectedLocationLabel.value = editingContact!.locationLabel;
+        hasLocation.value = true;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Kontak Baru'),
+        title: Text(
+          editingContact != null ? 'Edit Kontak' : 'Tambah Kontak Baru',
+        ),
         centerTitle: true,
         elevation: 0,
       ),
@@ -240,7 +262,10 @@ class AddContactView extends StatelessWidget {
                   onPressed: () async {
                     // Navigate to location view untuk pick location
                     final result = await Get.to<Map<String, dynamic>?>(
-                      () => const LocationPickerWrapper(),
+                      () => LocationPickerWrapper(
+                        initialLatitude: selectedLatitude.value,
+                        initialLongitude: selectedLongitude.value,
+                      ),
                     );
 
                     if (result != null) {
@@ -333,19 +358,38 @@ class AddContactView extends StatelessWidget {
                   onPressed: controller.isLoading.value
                       ? null
                       : () {
-                          controller.addContact(
-                            name: nameController.text,
-                            phone: phoneController.text.isEmpty
-                                ? null
-                                : phoneController.text,
-                            email: emailController.text.isEmpty
-                                ? null
-                                : emailController.text,
-                            address: addressController.text,
-                            latitude: selectedLatitude.value,
-                            longitude: selectedLongitude.value,
-                            locationLabel: selectedLocationLabel.value,
-                          );
+                          if (editingContact != null) {
+                            // Update existing contact
+                            controller.updateContact(
+                              id: editingContact!.id,
+                              name: nameController.text,
+                              phone: phoneController.text.isEmpty
+                                  ? null
+                                  : phoneController.text,
+                              email: emailController.text.isEmpty
+                                  ? null
+                                  : emailController.text,
+                              address: addressController.text,
+                              latitude: selectedLatitude.value,
+                              longitude: selectedLongitude.value,
+                              locationLabel: selectedLocationLabel.value,
+                            );
+                          } else {
+                            // Add new contact
+                            controller.addContact(
+                              name: nameController.text,
+                              phone: phoneController.text.isEmpty
+                                  ? null
+                                  : phoneController.text,
+                              email: emailController.text.isEmpty
+                                  ? null
+                                  : emailController.text,
+                              address: addressController.text,
+                              latitude: selectedLatitude.value,
+                              longitude: selectedLongitude.value,
+                              locationLabel: selectedLocationLabel.value,
+                            );
+                          }
 
                           if (controller.errorMessage.value == null) {
                             Future.delayed(const Duration(seconds: 2), () {
@@ -371,9 +415,11 @@ class AddContactView extends StatelessWidget {
                             ),
                           ),
                         )
-                      : const Text(
-                          'Simpan Kontak',
-                          style: TextStyle(
+                      : Text(
+                          editingContact != null
+                              ? 'Update Kontak'
+                              : 'Simpan Kontak',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -430,7 +476,14 @@ class AddContactView extends StatelessWidget {
 
 // Wrapper untuk LocationView agar bisa return data
 class LocationPickerWrapper extends StatelessWidget {
-  const LocationPickerWrapper({Key? key}) : super(key: key);
+  final double? initialLatitude;
+  final double? initialLongitude;
+
+  const LocationPickerWrapper({
+    Key? key,
+    this.initialLatitude,
+    this.initialLongitude,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -438,8 +491,30 @@ class LocationPickerWrapper extends StatelessWidget {
     if (!Get.isRegistered<LocationPermissionController>()) {
       Get.put(LocationPermissionController());
     }
-    if (!Get.isRegistered<LocationController>()) {
-      Get.put(LocationController());
+    final locationController = Get.isRegistered<LocationController>()
+        ? Get.find<LocationController>()
+        : Get.put(LocationController());
+
+    // Jika ada initial location, set sebagai selectedMarker
+    if (initialLatitude != null && initialLongitude != null) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        locationController.selectedLocation.value = LocationModel(
+          latitude: initialLatitude!,
+          longitude: initialLongitude!,
+          accuracy: 0,
+          timestamp: DateTime.now(),
+        );
+
+        locationController.selectedMarker.value = Marker(
+          point: LatLng(initialLatitude!, initialLongitude!),
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.location_on, color: Colors.blue),
+        );
+
+        // Move map ke lokasi itu
+        locationController.moveTo(initialLatitude!, initialLongitude!);
+      });
     }
 
     return Scaffold(

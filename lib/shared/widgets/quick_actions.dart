@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../modules/apify/controllers/apify_controller.dart';
-import '../../modules/product/views/add_stock_view.dart';
+import '../../modules/product/views/stok/add_stock_view.dart';
 
 class QuickActions extends StatelessWidget {
   final ApifyController controller;

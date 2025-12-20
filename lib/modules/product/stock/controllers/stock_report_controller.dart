@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../../../data/local/hive_boxes.dart';
+import '../../../../data/local/hive_boxes.dart';
 
 class StockReportData {
   final String productId;

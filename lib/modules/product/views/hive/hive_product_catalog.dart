@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/modules/product/widgets/dynamic_product_card.dart';
 import 'package:my_app/modules/apify/controllers/apify_controller.dart';
-import 'package:my_app/modules/product/views/add_stock_view.dart';
+import 'package:my_app/modules/product/views/stok/add_stock_view.dart';
 import 'package:my_app/utils/helpers.dart';
 
 class ProductCatalogSection extends StatelessWidget {

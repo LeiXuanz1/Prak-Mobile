@@ -13,7 +13,12 @@ class LocationController extends GetxController {
   late final LocationService service;
 
   Rxn<Marker> userMarker = Rxn<Marker>();
+  Rxn<Marker> selectedMarker =
+      Rxn<Marker>(); // Marker untuk lokasi yang dipilih
   Rx<LocationModel?> currentLocation = Rx<LocationModel?>(null);
+  Rx<LocationModel?> selectedLocation = Rx<LocationModel?>(
+    null,
+  ); // Lokasi yang dipilih
 
   RxBool isStreaming = false.obs;
 
@@ -104,6 +109,26 @@ class LocationController extends GetxController {
       height: 40,
       child: const Icon(Icons.location_on, color: Colors.red),
     );
+  }
+
+  void setMarkerFromTap(double lat, double lng) {
+    // Simpan lokasi yang dipilih (tidak mengubah currentLocation)
+    selectedLocation.value = LocationModel(
+      latitude: lat,
+      longitude: lng,
+      accuracy: 0,
+      timestamp: DateTime.now(),
+    );
+
+    // Buat marker biru untuk lokasi yang dipilih
+    selectedMarker.value = Marker(
+      point: LatLng(lat, lng),
+      width: 40,
+      height: 40,
+      child: const Icon(Icons.location_on, color: Colors.blue),
+    );
+
+    moveTo(lat, lng);
   }
 
   Future<void> detectBestLocationSource() async {

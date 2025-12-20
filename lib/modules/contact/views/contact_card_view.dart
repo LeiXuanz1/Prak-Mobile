@@ -8,7 +8,9 @@ class ContactCardView extends StatelessWidget {
       ? Get.find<ContactController>()
       : Get.put(ContactController());
 
-  ContactCardView({Key? key}) : super(key: key);
+  final bool isPickerMode;
+
+  ContactCardView({Key? key, this.isPickerMode = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +64,14 @@ class ContactCardView extends StatelessWidget {
               ),
               child: InkWell(
                 onTap: () {
-                  // Return contact untuk digunakan di stock keluar
-                  Get.back(result: contact);
+                  if (isPickerMode) {
+                    // Return contact untuk digunakan di stock keluar
+                    Get.back(result: contact);
+                  }
+                },
+                onLongPress: () {
+                  // Edit contact dengan form yang ada
+                  Get.to(() => AddContactView(editingContact: contact));
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -113,12 +121,20 @@ class ContactCardView extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                            if (!isPickerMode)
+                              Text(
+                                'Tekan lama untuk edit',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[400],
+                                  fontSize: 12,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
+                        isPickerMode ? Icons.check_circle_outline : Icons.edit,
+                        size: 20,
                         color: Colors.grey[400],
                       ),
                     ],

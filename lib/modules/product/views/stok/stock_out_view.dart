@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/stock_out_controller.dart';
-import '../../../data/local/models/product_hive_model.dart';
+import '../../stock/controllers/stock_out_controller.dart';
+import '../../../../data/local/models/product_hive_model.dart';
+import '../../../../data/local/models/contact_hive_model.dart';
+import '../../../contact/views/contact_card_view.dart';
 
 class StockOutView extends StatelessWidget {
   const StockOutView({super.key});
@@ -132,6 +134,80 @@ class StockOutView extends StatelessWidget {
                     controller.selectProduct(product);
                   }
                 },
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Contact Selection
+            Text(
+              'Pilih Pembeli (Kontak) - Opsional',
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => GestureDetector(
+                onTap: () async {
+                  final result = await Get.to<ContactHiveModel?>(
+                    () => ContactCardView(isPickerMode: true),
+                  );
+                  if (result != null) {
+                    controller.selectContact(result);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: controller.selectedContact.value != null
+                          ? const Color(0xFF2E7D32)
+                          : Colors.grey.shade300,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: controller.selectedContact.value != null
+                        ? const Color(0xFF2E7D32).withValues(alpha: 0.05)
+                        : Colors.transparent,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.person,
+                        color: controller.selectedContact.value != null
+                            ? const Color(0xFF2E7D32)
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          controller.selectedContact.value != null
+                              ? '${controller.selectedContact.value!.name} (${controller.selectedContact.value!.phone})'
+                              : 'Tap untuk pilih pembeli...',
+                          style: TextStyle(
+                            color: controller.selectedContact.value != null
+                                ? Colors.black87
+                                : Colors.grey,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (controller.selectedContact.value != null)
+                        GestureDetector(
+                          onTap: () => controller.selectContact(null),
+                          child: const Icon(
+                            Icons.close,
+                            color: Color(0xFF2E7D32),
+                            size: 20,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),

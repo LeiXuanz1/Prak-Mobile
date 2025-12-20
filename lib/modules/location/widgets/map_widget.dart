@@ -6,8 +6,9 @@ import 'package:my_app/modules/location/controllers/location_controller.dart';
 
 class MapWidget extends StatelessWidget {
   final MapController mapController;
+  final Function(double, double)? onMapTap;
 
-  MapWidget({super.key, required this.mapController});
+  MapWidget({super.key, required this.mapController, this.onMapTap});
 
   final LocationController c = Get.find();
 
@@ -28,6 +29,11 @@ class MapWidget extends StatelessWidget {
               await Future.delayed(const Duration(milliseconds: 500));
               c.mapReady.value = true;
             },
+            onTap: (tapPosition, point) {
+              if (onMapTap != null) {
+                onMapTap!(point.latitude, point.longitude);
+              }
+            },
             initialCenter: LatLng(loc.latitude, loc.longitude),
             initialZoom: 16,
             keepAlive: true,
@@ -39,8 +45,19 @@ class MapWidget extends StatelessWidget {
             ),
 
             Obx(() {
-              final marker = c.userMarker.value;
-              return MarkerLayer(markers: marker == null ? [] : [marker]);
+              final markers = <Marker>[];
+
+              // Marker merah = lokasi real-time
+              if (c.userMarker.value != null) {
+                markers.add(c.userMarker.value!);
+              }
+
+              // Marker biru = lokasi yang dipilih
+              if (c.selectedMarker.value != null) {
+                markers.add(c.selectedMarker.value!);
+              }
+
+              return MarkerLayer(markers: markers);
             }),
           ],
         ),

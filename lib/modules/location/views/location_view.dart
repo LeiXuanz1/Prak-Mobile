@@ -13,7 +13,13 @@ class LocationView extends GetView<LocationController> {
   final bool isPickerMode;
   final Function(double, double)? onLocationSelected;
 
-  LocationView({this.isPickerMode = false, this.onLocationSelected});
+  LocationView({this.isPickerMode = false, this.onLocationSelected}) {
+    // Reset selectedLocation saat picker mode dibuka
+    if (isPickerMode) {
+      controller.selectedLocation.value = null;
+      controller.selectedMarker.value = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +43,12 @@ class LocationView extends GetView<LocationController> {
 
         return Stack(
           children: [
-            MapWidget(mapController: controller.mapController),
+            MapWidget(
+              mapController: controller.mapController,
+              onMapTap: isPickerMode
+                  ? (lat, lng) => controller.setMarkerFromTap(lat, lng)
+                  : null,
+            ),
 
             if (!isPickerMode)
               Positioned(
@@ -58,10 +69,13 @@ class LocationView extends GetView<LocationController> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       if (onLocationSelected != null) {
-                        onLocationSelected!(
-                          controller.currentLocation.value!.latitude,
-                          controller.currentLocation.value!.longitude,
-                        );
+                        // Gunakan selectedLocation jika ada, jika tidak gunakan currentLocation
+                        final loc =
+                            controller.selectedLocation.value ??
+                            controller.currentLocation.value;
+                        if (loc != null) {
+                          onLocationSelected!(loc.latitude, loc.longitude);
+                        }
                       }
                     },
                     icon: const Icon(Icons.check),
