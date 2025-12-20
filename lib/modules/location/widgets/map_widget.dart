@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:my_app/modules/location/controllers/location_controller.dart';
 import 'package:my_app/modules/contact/controllers/contact_controller.dart';
 
+// Map widget untuk menampilkan lokasi dengan marker kontak
+
 class MapWidget extends StatelessWidget {
   final MapController mapController;
   final Function(double, double)? onMapTap;
