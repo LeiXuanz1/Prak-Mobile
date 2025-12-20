@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../stock/controllers/stock_in_controller.dart';
-import '../../../../data/local/models/product_hive_model.dart';
+import '../../../../data/local/hive_models/product_hive_model.dart';
 
 class StockInView extends StatelessWidget {
   const StockInView({super.key});

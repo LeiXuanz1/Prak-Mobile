@@ -1,5 +1,4 @@
 import 'package:hive/hive.dart';
-
 part 'product_hive_model.g.dart';
 
 @HiveType(typeId: 1)
@@ -34,6 +33,15 @@ class ProductHiveModel {
   @HiveField(9)
   final String status;
 
+  @HiveField(10)
+  final DateTime updatedAt;
+
+  @HiveField(11)
+  final bool isSynced;
+
+  @HiveField(12)
+  final bool isDeleted;
+
   ProductHiveModel({
     required this.id,
     required this.title,
@@ -45,20 +53,69 @@ class ProductHiveModel {
     required this.thumbnail,
     required this.source,
     required this.status,
+    required this.updatedAt,
+    this.isSynced = false,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
-  return {
-    "id": id,
-    "title": title,
-    "category": category,
-    "stock": stock,
-    "unit": unit,
-    "price": price,
-    "description": description,
-    "thumbnail": thumbnail,
-    "source": source,
-    "status": status,
-  };
+    return {
+      "id": id,
+      "title": title,
+      "category": category,
+      "stock": stock,
+      "unit": unit,
+      "price": price,
+      "description": description,
+      "thumbnail": thumbnail,
+      "source": source,
+      "status": status,
+    };
+  }
+
+  Map<String, dynamic> toSupabase() {
+    return {
+      'id': id,
+      'display_name': title,
+      'category': category,
+      'price': price,
+      'unit_size': unit.trim().toLowerCase(),
+      'thumbnail': thumbnail,
+      'packaging': description,
+    };
+  }
 }
+
+extension ProductHiveModelCopy on ProductHiveModel {
+  ProductHiveModel copyWith({
+    String? id,
+    String? title,
+    String? category,
+    int? stock,
+    String? unit,
+    double? price,
+    String? description,
+    dynamic thumbnail,
+    String? source,
+    String? status,
+    DateTime? updatedAt,
+    bool? isSynced,
+    bool? isDeleted,
+  }) {
+    return ProductHiveModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      stock: stock ?? this.stock,
+      unit: unit ?? this.unit,
+      price: price ?? this.price,
+      description: description ?? this.description,
+      thumbnail: thumbnail ?? this.thumbnail,
+      source: source ?? this.source,
+      status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isSynced: isSynced ?? this.isSynced,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
+  }
 }

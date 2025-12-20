@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../stock/controllers/stock_out_controller.dart';
-import '../../../../data/local/models/product_hive_model.dart';
+import '../../../../data/local/hive_models/product_hive_model.dart';
 import '../../../../data/local/models/contact_hive_model.dart';
 import '../../../contact/views/contact_card_view.dart';
 

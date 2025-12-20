@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
-import 'package:my_app/data/local/models/product_hive_model.dart';
+import 'package:my_app/data/local/hive_models/product_hive_model.dart';
+import 'package:uuid/uuid.dart';
 
 class AddStockView extends StatefulWidget {
   final ProductHiveModel? productToEdit;
@@ -52,8 +53,7 @@ class _AddStockViewState extends State<AddStockView> {
       _priceCtrl.text = edit.price.toString();
       _descCtrl.text = edit.description;
 
-      if (edit.thumbnail != null &&
-          File(edit.thumbnail!).existsSync()) {
+      if (edit.thumbnail != null && File(edit.thumbnail!).existsSync()) {
         _selectedImageFile = File(edit.thumbnail!);
       }
     }
@@ -85,22 +85,26 @@ class _AddStockViewState extends State<AddStockView> {
 
     final isEdit = widget.productToEdit != null;
 
+    final now = DateTime.now();
+
     final product = ProductHiveModel(
-      id: isEdit
-          ? widget.productToEdit!.id
-          : DateTime.now().millisecondsSinceEpoch.toString(),
+      id: isEdit ? widget.productToEdit!.id : const Uuid().v4(),
+
       title: _nameCtrl.text.trim(),
       category: _category,
       stock: int.parse(_stockCtrl.text),
       unit: _unitCtrl.text,
       price: double.tryParse(_priceCtrl.text) ?? 0,
       description: _descCtrl.text.trim(),
-      thumbnail: _selectedImageFile?.path ??
-          widget.productToEdit?.thumbnail,
+      thumbnail: _selectedImageFile?.path ?? widget.productToEdit?.thumbnail,
+
       source: 'local',
-      status: int.parse(_stockCtrl.text) > 20
-          ? 'Available'
-          : 'Low Stock',
+      status: int.parse(_stockCtrl.text) > 20 ? 'Available' : 'Low Stock',
+
+      updatedAt: now,
+
+      isSynced: false,
+      isDeleted: false,
     );
 
     isEdit
@@ -116,8 +120,7 @@ class _AddStockViewState extends State<AddStockView> {
       title,
       msg,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor:
-          isError ? Colors.red : Colors.green,
+      backgroundColor: isError ? Colors.red : Colors.green,
       colorText: Colors.white,
     );
   }
@@ -128,9 +131,9 @@ class _AddStockViewState extends State<AddStockView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.productToEdit == null
-            ? 'Add Product'
-            : 'Edit Product'),
+        title: Text(
+          widget.productToEdit == null ? 'Add Product' : 'Edit Product',
+        ),
         centerTitle: true,
       ),
 
@@ -183,15 +186,10 @@ class _AddStockViewState extends State<AddStockView> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: _selectedImageFile == null
-            ? const Center(
-                child: Icon(Icons.image_outlined, size: 48),
-              )
+            ? const Center(child: Icon(Icons.image_outlined, size: 48))
             : ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  _selectedImageFile!,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.file(_selectedImageFile!, fit: BoxFit.cover),
               ),
       ),
     );

@@ -1,4 +1,4 @@
-import '/data/local/models/product_hive_model.dart';
+import 'package:my_app/data/local/hive_models/product_hive_model.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../apify/controllers/apify_controller.dart';

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SupabaseService {
-  static late final SupabaseClient client;
+  static SupabaseClient get client => Supabase.instance.client;
 
   // Inisialisasi Supabase
   static Future<void> init() async {
@@ -17,8 +17,6 @@ class SupabaseService {
     }
 
     await Supabase.initialize(url: url, anonKey: anonKey);
-
-    client = Supabase.instance.client;
     await testConnection();
 
     print(dotenv.env['SUPABASE_URL']);
@@ -31,17 +29,25 @@ class SupabaseService {
       final res = await client.from('soy_sauces').select().limit(1);
       log('Supabase connected. Sample response: $res');
     } catch (e, stack) {
-      log('Supabase connection failed', error: e, stackTrace: stack,);
+      log('Supabase connection failed', error: e, stackTrace: stack);
     }
   }
 
-  static Future<void> insertSoySauce(Map<String, dynamic> row) async {
-    try {
-      await client.from('soy_sauces').insert(row);
-    } catch (e, stack) {
-      log('Failed to insert soy sauce', error: e, stackTrace: stack,);
-      rethrow;
+  static bool get isAuthenticated =>
+      client.auth.currentSession?.user.role == 'authenticated';
+
+  static Future<Map<String, dynamic>> insertSoySauce(Map<String, dynamic> row) async {
+    if (!isAuthenticated) {
+      print('User not authenticated');
     }
+
+    final res = await client
+        .from('soy_sauces')
+        .insert(row)
+        .select()
+        .single();
+
+    return Map<String, dynamic>.from(res);
   }
 
   static Future<List<Map<String, dynamic>>> getSoySauces() async {

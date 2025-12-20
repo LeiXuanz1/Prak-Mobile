@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../data/local/hive_boxes.dart';
 import '../../../../data/local/models/stock_in_transaction.dart';
-import '../../../../data/local/models/product_hive_model.dart';
+import '../../../../data/local/hive_models/product_hive_model.dart';
 
 class StockInController extends GetxController {
   // Form state

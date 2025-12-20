@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:developer';
 import 'dart:io';
 import 'package:my_app/utils/helpers.dart';
 
@@ -15,12 +14,40 @@ class DynamicProductCard extends StatelessWidget {
     this.compact = false,
   });
 
+  Widget _resolveImage(String? path,
+      {BoxFit fit = BoxFit.cover, bool small = false}) {
+    if (path == null || path.isEmpty) {
+      return small ? _buildSmallPlaceholder() : _buildPlaceholder();
+    }
+
+    // Network image
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: fit,
+        errorBuilder: (_, __, ___) =>
+            small ? _buildSmallPlaceholder() : _buildPlaceholder(),
+      );
+    }
+
+    // Local file (absolute / relative)
+    final file = File(path);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        fit: fit,
+        errorBuilder: (_, __, ___) =>
+            small ? _buildSmallPlaceholder() : _buildPlaceholder(),
+      );
+    }
+
+    return small ? _buildSmallPlaceholder() : _buildPlaceholder();
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final imageUrl = _extractImageUrl();
-    final imageUrlOrPath = _extractImageUrl();
-    final isLocalFile =
-        imageUrlOrPath != null && imageUrlOrPath.startsWith('/');
+    final imagePath = _extractImageUrl();
     final title = _extractTitle();
     final subtitle = _extractSubtitle();
     final price = _extractPrice();
@@ -42,23 +69,10 @@ class DynamicProductCard extends StatelessWidget {
                   child: SizedBox(
                     width: 72,
                     height: 72,
-                    child: imageUrlOrPath != null && imageUrlOrPath.isNotEmpty
-                        ? (isLocalFile
-                              ? Image.file(
-                                  File(imageUrlOrPath),
-                                  fit: BoxFit.cover,
-                                  semanticLabel: title,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      _buildSmallPlaceholder(),
-                                )
-                              : Image.network(
-                                  imageUrlOrPath,
-                                  fit: BoxFit.cover,
-                                  semanticLabel: title,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      _buildSmallPlaceholder(),
-                                ))
-                        : _buildSmallPlaceholder(),
+                    child: _resolveImage(
+                      imagePath,
+                      small: true,
+                    ),          
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -145,8 +159,10 @@ class DynamicProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section
-            _buildImageSection(imageUrl),
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: _resolveImage(imagePath),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -229,40 +245,6 @@ class DynamicProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(String? imageUrlOrPath) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: imageUrlOrPath != null && imageUrlOrPath.isNotEmpty
-          ? (!imageUrlOrPath.startsWith('http')
-                ? Image.file(
-                    File(imageUrlOrPath),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildPlaceholder();
-                    },
-                  )
-                : Image.network(
-                    imageUrlOrPath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return _buildPlaceholder();
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                  ))
-          : _buildPlaceholder(),
-    );
-  }
-
   Widget _buildPlaceholder() {
     return Container(
       decoration: BoxDecoration(
@@ -329,9 +311,7 @@ class DynamicProductCard extends StatelessWidget {
         final value = data[key].toString();
         if (value.isNotEmpty) {
           // Accept HTTP URLs or local file paths
-          if (value.startsWith('http://') ||
-              value.startsWith('https://') ||
-              value.startsWith('/')) {
+          if (value.isNotEmpty) {
             return value;
           }
         }
@@ -444,57 +424,5 @@ class DynamicProductCard extends StatelessWidget {
     if (stock > 50) return Colors.green;
     if (stock > 20) return Colors.orange;
     return Colors.red;
-  }
-}
-
-class ProductCatalogExample extends StatelessWidget {
-  const ProductCatalogExample({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Example: Data dari berbagai API akan tetap work
-    final products = [
-      {
-        'image': 'https://example.com/kecap1.jpg',
-        'title': 'Kecap Manis ABC',
-        'category': 'Kecap Manis',
-        'price': 15000,
-        'stock': 120,
-      },
-      {
-        'imageUrl': 'https://example.com/kecap2.jpg',
-        'name': 'Kecap Asin Bango',
-        'brand': 'Bango',
-        'harga': 12000,
-        'quantity': 45,
-      },
-      {
-        // Tanpa gambar - akan show placeholder
-        'title': 'Kecap Special',
-        'subtitle': 'Premium Quality',
-        'price': 25000,
-        'stock': 5,
-      },
-    ];
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        return DynamicProductCard(
-          data: products[index],
-          onTap: () {
-            // Handle tap
-            log("Product tapped: , ${products[index]}");
-          },
-        );
-      },
-    );
   }
 }

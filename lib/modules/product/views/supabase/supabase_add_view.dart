@@ -127,9 +127,8 @@ class SupabaseAddView extends StatelessWidget {
                   onPressed: controller.isLoading.value ||
                           controller.uploadingImage.value
                       ? null
-                      : () async {
-                          await controller.submit();
-                          Get.back();
+                      : () {
+                          controller.submit();
                         },
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),

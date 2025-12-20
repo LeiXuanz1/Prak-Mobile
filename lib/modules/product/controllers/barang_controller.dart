@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../../../data/local/hive_boxes.dart';
-import '../../../data/local/models/product_hive_model.dart';
+import '../../../data/local/hive_models/product_hive_model.dart';
 
 class BarangController extends GetxController {
   final productList = Rx<List<ProductHiveModel>>([]);
