@@ -179,11 +179,11 @@ class ProductCatalogSection extends StatelessWidget {
                             )
                           : GridView.builder(
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 260,
                                     crossAxisSpacing: 12,
                                     mainAxisSpacing: 12,
-                                    childAspectRatio: 0.75,
+                                    childAspectRatio: 0.78,
                                   ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
