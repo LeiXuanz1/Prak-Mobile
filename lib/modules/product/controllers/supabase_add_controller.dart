@@ -209,25 +209,29 @@ class SupabaseAddController extends GetxController {
   }
 
   Future<void> submitForm(ProductFormData data) async {
-    isLoading.value = true;
+    try {
+      isLoading.value = true;
 
-    String? imagePath;
+      String? imagePath;
 
-    if (data.imagePath != null) {
-      imagePath = await _uploadImageToStorage(File(data.imagePath!));
+      if (data.imagePath != null) {
+        imagePath = await _uploadImageToStorage(File(data.imagePath!));
+      }
+
+      await SupabaseService.client.from('soy_sauces').insert({
+        'display_name': data.title,
+        'category': data.category,
+        'stock': data.stock,
+        'unit_size': data.unit.trim().toLowerCase(),
+        'price': data.price,
+        'packaging': data.packaging,
+        'description': data.description,
+        'thumbnail': imagePath,
+      });
+
+      await Get.find<SupabaseProductController>().loadProducts();
+    } finally {
+      isLoading.value = false;
     }
-
-    await SupabaseService.client.from('soy_sauces').insert({
-      'display_name': data.title,
-      'category': data.category,
-      'stock': data.stock,
-      'unit_size': data.unit.trim().toLowerCase(),
-      'price': data.price,
-      'packaging': data.packaging,
-      'description': data.description,
-      'thumbnail': imagePath,
-    });
-
-    isLoading.value = false;
   }
 }
