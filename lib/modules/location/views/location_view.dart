@@ -13,7 +13,11 @@ class LocationView extends GetView<LocationController> {
   final bool isPickerMode;
   final Function(double, double)? onLocationSelected;
 
-  LocationView({this.isPickerMode = false, this.onLocationSelected}) {
+  LocationView({
+    super.key,
+    this.isPickerMode = false,
+    this.onLocationSelected,
+  }) {
     // Reset selectedLocation saat picker mode dibuka
     if (isPickerMode) {
       controller.selectedLocation.value = null;

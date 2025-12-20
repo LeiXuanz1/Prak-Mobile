@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
@@ -19,7 +20,7 @@ class AuthController extends GetxController {
     super.onInit();
 
     _authService.onAuthStateChanged((session) async {
-      print('AUTH EVENT: ${session != null}');
+      log('AUTH EVENT: ${session != null}');
 
       isLoggedIn.value = session != null;
       isLoading.value = false;

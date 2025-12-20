@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../modules/apify/controllers/apify_controller.dart';
-import '../../modules/product/views/stok/add_stock_view.dart';
+import '../../modules/product/views/add_stock_view.dart';
 
 class QuickActions extends StatelessWidget {
   final ApifyController controller;
@@ -59,35 +59,33 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 150,
-      child: GridView.extent(
-        maxCrossAxisExtent: 120,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          _actionCard(
-            context,
-            icon: Icons.add_circle_outline,
-            label: 'Add Product',
-            onTap: () => Get.to(() => const AddStockView()),
-          ),
-          _actionCard(
-            context,
-            icon: Icons.bar_chart_outlined,
-            label: 'Reports',
-            onTap: () {},
-          ),
-          _actionCard(
-            context,
-            icon: Icons.analytics_outlined,
-            label: 'Analytics',
-            onTap: () {},
-          ),
-        ],
-      ),
+    return GridView.extent(
+      maxCrossAxisExtent: 120, // adaptive, M3 friendly
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        _actionCard(
+          context,
+          icon: Icons.add_circle_outline,
+          label: 'Add Product',
+          onTap: () => Get.to(() => AddStockView()),
+        ),
+        _actionCard(context, icon: Icons.search, label: 'Search', onTap: () {}),
+        _actionCard(
+          context,
+          icon: Icons.bar_chart_outlined,
+          label: 'Reports',
+          onTap: () {},
+        ),
+        _actionCard(
+          context,
+          icon: Icons.analytics_outlined,
+          label: 'Analytics',
+          onTap: () {},
+        ),
+      ],
     );
   }
 }

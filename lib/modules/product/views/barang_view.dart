@@ -5,7 +5,7 @@ import '../controllers/barang_controller.dart';
 class BarangView extends StatelessWidget {
   final controller = Get.put(BarangController());
 
-  BarangView({Key? key}) : super(key: key);
+  BarangView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +163,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha((0.1 * 255).round()),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(

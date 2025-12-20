@@ -23,20 +23,21 @@ class ProductHiveModelAdapter extends TypeAdapter<ProductHiveModel> {
       stock: fields[3] as int,
       unit: fields[4] as String,
       price: fields[5] as double,
-      description: fields[6] as String,
+      description: fields[6] as String?,
       thumbnail: fields[7] as dynamic,
       source: fields[8] as String,
       status: fields[9] as String,
       updatedAt: fields[10] as DateTime,
       isSynced: fields[11] as bool,
       isDeleted: fields[12] as bool,
+      packaging: fields[13] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductHiveModel obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -62,7 +63,9 @@ class ProductHiveModelAdapter extends TypeAdapter<ProductHiveModel> {
       ..writeByte(11)
       ..write(obj.isSynced)
       ..writeByte(12)
-      ..write(obj.isDeleted);
+      ..write(obj.isDeleted)
+      ..writeByte(13)
+      ..write(obj.packaging);
   }
 
   @override

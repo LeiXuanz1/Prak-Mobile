@@ -19,8 +19,8 @@ class SupabaseService {
     await Supabase.initialize(url: url, anonKey: anonKey);
     await testConnection();
 
-    print(dotenv.env['SUPABASE_URL']);
-    print(dotenv.env['SUPABASE_ANON_KEY']?.substring(0, 10));
+    log(dotenv.env['SUPABASE_URL'] ?? '');
+    log(dotenv.env['SUPABASE_ANON_KEY']?.substring(0, 10) ?? '');
   }
 
   // Quick test
@@ -36,16 +36,14 @@ class SupabaseService {
   static bool get isAuthenticated =>
       client.auth.currentSession?.user.role == 'authenticated';
 
-  static Future<Map<String, dynamic>> insertSoySauce(Map<String, dynamic> row) async {
+  static Future<Map<String, dynamic>> insertSoySauce(
+    Map<String, dynamic> row,
+  ) async {
     if (!isAuthenticated) {
-      print('User not authenticated');
+      log('User not authenticated');
     }
 
-    final res = await client
-        .from('soy_sauces')
-        .insert(row)
-        .select()
-        .single();
+    final res = await client.from('soy_sauces').insert(row).select().single();
 
     return Map<String, dynamic>.from(res);
   }

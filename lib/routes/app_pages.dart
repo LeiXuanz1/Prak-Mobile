@@ -13,23 +13,17 @@ import 'package:my_app/modules/auth/views/register_view.dart';
 
 class AppPages {
   static final routes = [
-    GetPage(
-      name: AppRoutes.login,
-      page: () => LoginView()
-    ),
-    GetPage(
-      name: AppRoutes.register,
-      page: () => RegisterView(),
-    ),
-    GetPage(
-      name: AppRoutes.home,
-      page: () => HomeView(),
-      ),
+    GetPage(name: AppRoutes.login, page: () => LoginView()),
+    GetPage(name: AppRoutes.register, page: () => RegisterView()),
+    // Homepage accessible tanpa login
+    GetPage(name: AppRoutes.home, page: () => HomeView()),
     GetPage(
       name: AppRoutes.apify,
       page: () => ApifyPage(),
       binding: ApifyBinding(),
+      middlewares: [AuthMiddleware()],
     ),
+    // Protected routes - require login
     GetPage(
       name: AppRoutes.supabaseProducts,
       page: () => SupabaseProductPage(),
@@ -44,6 +38,7 @@ class AppPages {
       name: AppRoutes.location,
       page: () => LocationView(),
       binding: LocationBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

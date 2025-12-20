@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:my_app/data/local/controllers/hive_product_controller.dart';
+import 'package:my_app/data/local/hive_models/product_hive_model.dart';
 import '../../../data/cloud/supabase_service.dart';
 import '../../apify/controllers/apify_controller.dart';
 import '../controllers/supabase_product_controller.dart';
+import 'package:my_app/modules/product/models/product_form_data.dart';
 
 class SupabaseAddController extends GetxController {
   final title = ''.obs;
@@ -77,7 +80,7 @@ class SupabaseAddController extends GetxController {
       final ext = imageFile.path.split('.').last;
       final uuid = DateTime.now().millisecondsSinceEpoch.toString();
       // Store as soy_sauces/{uuid}.{ext}
-      final storagePath = 'soy_sauces/${uuid}.$ext';
+      final storagePath = 'soy_sauces/$uuid.$ext';
 
       // Upload to Supabase Storage
       final bytes = await imageFile.readAsBytes();
@@ -101,7 +104,7 @@ class SupabaseAddController extends GetxController {
   }
 
   Future<void> submit() async {
-    print('SUBMIT DIPANGGIL');
+    debugPrint('SUBMIT DIPANGGIL');
     isLoading.value = true;
     try {
       // Create a simple slug from the display name
@@ -111,7 +114,7 @@ class SupabaseAddController extends GetxController {
           .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
           .replaceAll(RegExp(r'(^-+|-+$)'), '');
 
-      print('SEBELUM UPLOAD IMAGE');
+      debugPrint('SEBELUM UPLOAD IMAGE');
       // Upload image if selected
       String? thumbnailStoragePath;
       if (selectedImageFile.value != null) {
@@ -120,12 +123,12 @@ class SupabaseAddController extends GetxController {
         );
         if (thumbnailStoragePath == null) {
           // Upload failed, snackbar already shown
-          print('UPLOAD GAGAL, SUBMIT BERHENTI');
+          debugPrint('UPLOAD GAGAL, SUBMIT BERHENTI');
           throw Exception('Upload image gagal');
         }
       }
 
-      final row = {
+      final Map<String, dynamic> row = {
         'display_name': title.value.trim(),
         'slug': slug,
         'category': category.value.trim().isEmpty
@@ -135,15 +138,33 @@ class SupabaseAddController extends GetxController {
             ? null
             : packaging.value.trim(),
         'price': double.tryParse(price.value) ?? 0.0,
-        // Store the storage object path in `thumbnail` column so the DB keeps the
-        // canonical reference to the object (e.g. "soy_sauces/72f1e3b9.jpg").
-        // The UI will convert this to a public URL when rendering.
         if (thumbnailStoragePath != null) 'thumbnail': thumbnailStoragePath,
       };
 
+      final res = await SupabaseService.insertSoySauce(row);
+      debugPrint('INSERTED ROW => $res');
+
       try {
-        final res = await SupabaseService.insertSoySauce(row);
-        print('INSERTED ROW => $res');
+        final hive = Get.find<HiveProductController>();
+
+        final localProduct = ProductHiveModel(
+          id: res['id'],
+          title: row['display_name'],
+          category: row['category'],
+          stock: 0,
+          unit: row['unit_size'],
+          price: row['price'],
+          description: row['description'],
+          thumbnail: thumbnailStoragePath,
+          source: 'supabase',
+          status: 'Available',
+          updatedAt: DateTime.now(),
+          isSynced: true,
+          isDeleted: false,
+          packaging: row['packaging'],
+        );
+
+        await hive.addProduct(localProduct);
       } catch (e) {
         // Bubble error to UI with a visible snackbar and rethrow so caller may inspect.
         Get.snackbar(
@@ -182,6 +203,33 @@ class SupabaseAddController extends GetxController {
           'timestamp': DateTime.now().toIso8601String(),
         });
       } catch (_) {}
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> submitForm(ProductFormData data) async {
+    try {
+      isLoading.value = true;
+
+      String? imagePath;
+
+      if (data.imagePath != null) {
+        imagePath = await _uploadImageToStorage(File(data.imagePath!));
+      }
+
+      await SupabaseService.client.from('soy_sauces').insert({
+        'display_name': data.title,
+        'category': data.category,
+        'stock': data.stock,
+        'unit_size': data.unit.trim().toLowerCase(),
+        'price': data.price,
+        'packaging': data.packaging,
+        'description': data.description,
+        'thumbnail': imagePath,
+      });
+
+      await Get.find<SupabaseProductController>().loadProducts();
     } finally {
       isLoading.value = false;
     }

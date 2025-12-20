@@ -37,7 +37,7 @@ Future<void> main() async {
       await ProductSyncService.sync();
     },
     onOffline: () {
-      print('Offline mode');
+      debugPrint('Offline mode');
     },
   );
 
@@ -45,9 +45,12 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final theme = Get.find<ThemeController>();
+    final auth = Get.find<AuthController>();
 
     return Obx(() {
       return GetMaterialApp(
@@ -55,26 +58,116 @@ class MyApp extends StatelessWidget {
 
         theme: ThemeData(
           useMaterial3: true,
-          colorSchemeSeed: const Color(0xFF2E7D32),
-          scaffoldBackgroundColor: const Color(0xFFF9FAF9),
+          colorSchemeSeed: const Color(0xFF1B5E20), // Material Green 900
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: const Color(0xFFFAFDF7),
 
-          inputDecorationTheme: const InputDecorationTheme(
+          // Proper M3 Input Decoration
+          inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Color(0xFFF1F5F2),
+            fillColor: const Color(0xFFF1F5F2),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+
+          // AppBar styling
+          appBarTheme: const AppBarTheme(
+            elevation: 1,
+            scrolledUnderElevation: 4,
+            backgroundColor: Color(0xFFFAFDF7),
+            foregroundColor: Color(0xFF1B5E20),
+            centerTitle: false,
+            titleTextStyle: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1B5E20),
+            ),
+          ),
+
+          // Button styling for better contrast
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          // FAB styling
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: Color(0xFF2E7D32),
+            foregroundColor: Colors.white,
+            elevation: 4,
+          ),
+
+          // Bottom Navigation styling
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF2E7D32),
+            unselectedItemColor: Colors.grey.shade600,
+            elevation: 8,
+            type: BottomNavigationBarType.fixed,
+          ),
+
+          // Card styling
+          cardTheme: CardThemeData(
+            color: Colors.white,
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+          ),
+        ),
+
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: const Color(
+            0xFF81C784,
+          ), // Material Green 400 for dark
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF121212),
+
+          appBarTheme: AppBarTheme(
+            elevation: 1,
+            backgroundColor: const Color(0xFF1F1F1F),
+            foregroundColor: const Color(0xFF81C784),
+          ),
+
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              foregroundColor: Colors.white,
             ),
           ),
         ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: const Color(0xFF2E7D32),
-          brightness: Brightness.dark,
-        ),
+
         themeMode: theme.themeMode,
 
         initialBinding: InitialBindings(),
-        initialRoute: AppRoutes.login,
+        // Initial route based on auth status
+        initialRoute: auth.isLoggedIn.value ? AppRoutes.home : AppRoutes.home,
         getPages: AppPages.routes,
       );
     });

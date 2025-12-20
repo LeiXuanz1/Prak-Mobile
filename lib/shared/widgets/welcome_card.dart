@@ -12,9 +12,7 @@ class WelcomeCard extends StatelessWidget {
     return Card(
       elevation: 0,
       color: theme.colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
@@ -46,13 +44,6 @@ class WelcomeCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    'Manajemen Stok Kecap',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
                   Text(
                     today,
                     style: theme.textTheme.bodySmall?.copyWith(

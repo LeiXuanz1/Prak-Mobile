@@ -165,6 +165,7 @@ class StockOutController extends GetxController {
         price: product.price,
         description: product.description,
         thumbnail: product.thumbnail,
+        packaging: product.packaging,
         source: product.source,
         status: product.status,
         updatedAt: DateTime.now(),

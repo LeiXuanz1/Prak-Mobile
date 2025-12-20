@@ -1,5 +1,6 @@
 import '../models/location_model.dart';
 import '../services/location_service.dart';
+import 'dart:developer';
 
 class LocationProvider {
   final LocationService service = LocationService();
@@ -32,9 +33,11 @@ class LocationProvider {
 
   // Mendapatkan lokasi dari Network provider
   Future<LocationModel> getNetwork() async {
-    print("Calling getNetwork()");
+    log("Calling getNetwork()");
     final locData = await service.getNetwork();
-    print("Network result: ${locData.latitude}, ${locData.longitude}, acc=${locData.accuracy}");
+    log(
+      "Network result: ${locData.latitude}, ${locData.longitude}, acc=${locData.accuracy}",
+    );
 
     return LocationModel(
       latitude: locData.latitude!,

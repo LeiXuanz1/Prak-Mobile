@@ -7,7 +7,7 @@ import '../controllers/recent_activity_controller.dart';
 class RecentActivityView extends StatelessWidget {
   final controller = Get.put(RecentActivityController());
 
-  RecentActivityView({Key? key}) : super(key: key);
+  RecentActivityView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +146,7 @@ class _StockInCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withAlpha((0.1 * 255).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.arrow_downward, color: Colors.green),
@@ -238,7 +238,7 @@ class _StockOutCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withAlpha((0.1 * 255).round()),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.arrow_upward, color: Colors.red),

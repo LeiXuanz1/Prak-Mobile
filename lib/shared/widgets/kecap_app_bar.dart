@@ -53,29 +53,38 @@ class KecapAppBar extends StatelessWidget {
                 Get.toNamed('/apify');
                 break;
               case 4:
-                Get.toNamed('/location');
-                break;
-              case 5:
                 controller.runComparisonAsync();
                 break;
-              case 6:
-                await authCtrl.logout();
-                Get.offAllNamed('/login');
+              case 5:
+                if (authCtrl.isLoggedIn.value) {
+                  await authCtrl.logout();
+                  Get.offAllNamed('/login');
+                } else {
+                  Get.toNamed('/login');
+                }
                 break;
             }
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 1, child: Text('Hive Products')),
-            PopupMenuItem(value: 2, child: Text('Supabase Products')),
-            PopupMenuItem(value: 3, child: Text('API')),
-            PopupMenuItem(value: 4, child: Text('Location')),
-            PopupMenuItem(value: 5, child: Text('Refresh')),
-            PopupMenuDivider(),
-            PopupMenuItem(
-              value: 6,
-              child: Text('Logout', style: TextStyle(color: Colors.red)),
-            ),
-          ],
+          itemBuilder: (context) {
+            return <PopupMenuEntry<int>>[
+              const PopupMenuItem(value: 1, child: Text('Hive Products')),
+              const PopupMenuItem(value: 2, child: Text('Supabase Products')),
+              const PopupMenuItem(value: 3, child: Text('API')),
+              const PopupMenuItem(value: 4, child: Text('Refresh')),
+              const PopupMenuDivider(),
+              PopupMenuItem<int>(
+                value: 5,
+                child: Obx(
+                  () => authCtrl.isLoggedIn.value
+                      ? const Text(
+                          'Logout',
+                          style: TextStyle(color: Colors.red),
+                        )
+                      : const Text('Login'),
+                ),
+              ),
+            ];
+          },
         ),
       ],
     );

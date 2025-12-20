@@ -14,7 +14,8 @@ class ConnectivityService {
     try {
       final result = await _connectivity.checkConnectivity();
       return result.isNotEmpty && _hasConnection(result.first);
-    } catch (e) {      // Error handling untuk connectivity check yang robust      log('Connectivity check failed: $e');
+    } catch (e) {
+      // Error handling untuk connectivity check yang robust      log('Connectivity check failed: $e');
       return false;
     }
   }

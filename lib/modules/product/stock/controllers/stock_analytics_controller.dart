@@ -69,35 +69,45 @@ class StockAnalyticsController extends GetxController {
           )
           .toList();
 
-      // 1. Stock Movement Chart (line chart data)
-      // Hanya tampilkan produk yang punya transaksi di rentang tanggal
-      // Filter berdasarkan pIn dan pOut bukan stock saat ini
-      List<ChartDataPoint> movementData = [];
-      for (var product in products) {
-        int pIn = stockInList
-            .where((t) => t.productId == product.id)
-            .fold(0, (sum, t) => sum + t.quantity);
-
-        int pOut = stockOutList
-            .where((t) => t.productId == product.id)
-            .fold(0, (sum, t) => sum + t.quantity);
-
-        final netMovement = pIn - pOut;
-
-        // Tambahkan hanya jika ada transaksi masuk/keluar di rentang tanggal
-        if (pIn > 0 || pOut > 0) {
-          movementData.add(
-            ChartDataPoint(
-              label: product.title.length > 10
-                  ? '${product.title.substring(0, 10)}...'
-                  : product.title,
-              // Tampilkan nilai pergerakan bersih (bisa negatif)
-              value: netMovement.toDouble(),
-            ),
-          );
+      final bool hasTransactionActivity =
+          stockInList.isNotEmpty || stockOutList.isNotEmpty;
+      // in the selected date range. If there is no in/out activity, treat
+      // Consider product.updatedAt as 'product activity' (new or updated product)
+      final bool hasNewProducts = products.any((p) {
+        try {
+          final updated = p.updatedAt;
+          return !(updated.isBefore(startDate) || updated.isAfter(endDate));
+        } catch (_) {
+          return false;
         }
+      });
+
+      final bool hasActivity = hasTransactionActivity || hasNewProducts;
+      // if there is no activity (transactions or new/updated products), show empty state
+
+      if (!hasActivity) {
+        stockMovementData.value = <ChartDataPoint>[];
+      } else {
+        // Use current stock per product so chart shows stock levels for
+        // products (but only when there was activity in the range).
+        List<ChartDataPoint> movementData = [];
+        for (var product in products) {
+          final stockVal = product.stock.toDouble();
+
+          // Optionally skip zero-stock products so chart focuses on stocked items
+          if (stockVal != 0) {
+            movementData.add(
+              ChartDataPoint(
+                label: product.title.length > 12
+                    ? '${product.title.substring(0, 12)}...'
+                    : product.title,
+                value: stockVal,
+              ),
+            );
+          }
+        }
+        stockMovementData.value = movementData;
       }
-      stockMovementData.value = movementData;
 
       // 2. In vs Out Comparison Chart (bar chart data)
       List<MapEntry<String, int>> inOutData = [];

@@ -6,7 +6,7 @@ import 'add_contact_view.dart';
 class ContactListView extends StatelessWidget {
   final controller = Get.put(ContactController());
 
-  ContactListView({Key? key}) : super(key: key);
+  ContactListView({super.key});
 
   @override
   Widget build(BuildContext context) {

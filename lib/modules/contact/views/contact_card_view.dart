@@ -10,7 +10,7 @@ class ContactCardView extends StatelessWidget {
 
   final bool isPickerMode;
 
-  ContactCardView({Key? key, this.isPickerMode = false}) : super(key: key);
+  ContactCardView({super.key, this.isPickerMode = false});
 
   @override
   Widget build(BuildContext context) {

@@ -18,22 +18,28 @@ class HiveBoxes {
     Hive.registerAdapter(StockOutTransactionAdapter());
     Hive.registerAdapter(ContactHiveModelAdapter());
 
-    await Hive.openBox<ProductHiveModel>(productBox);
-    await Hive.openBox(apiProductsBox);
-    await Hive.openBox(recentActivitiesBox);
-    await Hive.openBox<StockInTransaction>(stockInTransactionsBox);
-    await Hive.openBox<StockOutTransaction>(stockOutTransactionsBox);
-    await Hive.openBox<ContactHiveModel>(contactBox);
+    try {
+      await Hive.deleteBoxFromDisk('product_box');
+    } catch (e) {
+      // Box doesn't exist yet
+    }
+
+    await Hive.openBox<ProductHiveModel>('product_box');
+    await Hive.openBox('api_products');
+    await Hive.openBox('recent_activities');
+    await Hive.openBox<StockInTransaction>('stock_in_transactions');
+    await Hive.openBox<StockOutTransaction>('stock_out_transactions');
+    await Hive.openBox<ContactHiveModel>('contact_box');
   }
 
   static Box<ProductHiveModel> get products =>
-      Hive.box<ProductHiveModel>(productBox);
-  static Box get apiProducts => Hive.box(apiProductsBox);
-  static Box get recentActivities => Hive.box(recentActivitiesBox);
+      Hive.box<ProductHiveModel>('product_box');
+  static Box get apiProducts => Hive.box('api_products');
+  static Box get recentActivities => Hive.box('recent_activities');
   static Box<StockInTransaction> get stockInTransactions =>
-      Hive.box<StockInTransaction>(stockInTransactionsBox);
+      Hive.box<StockInTransaction>('stock_in_transactions');
   static Box<StockOutTransaction> get stockOutTransactions =>
-      Hive.box<StockOutTransaction>(stockOutTransactionsBox);
+      Hive.box<StockOutTransaction>('stock_out_transactions');
   static Box<ContactHiveModel> get contacts =>
-      Hive.box<ContactHiveModel>(contactBox);
+      Hive.box<ContactHiveModel>('contact_box');
 }

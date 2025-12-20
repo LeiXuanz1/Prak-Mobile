@@ -14,7 +14,7 @@ class AddContactView extends StatelessWidget {
   final controller = Get.put(ContactController());
   final ContactHiveModel? editingContact;
 
-  AddContactView({Key? key, this.editingContact}) : super(key: key);
+  AddContactView({super.key, this.editingContact});
 
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
@@ -276,6 +276,8 @@ class AddContactView extends StatelessWidget {
                       ),
                     );
 
+                    if (!context.mounted) return;
+
                     if (result != null) {
                       selectedLatitude.value = result['latitude'] as double?;
                       selectedLongitude.value = result['longitude'] as double?;
@@ -488,10 +490,10 @@ class LocationPickerWrapper extends StatelessWidget {
   final double? initialLongitude;
 
   const LocationPickerWrapper({
-    Key? key,
+    super.key,
     this.initialLatitude,
     this.initialLongitude,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

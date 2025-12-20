@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,7 @@ import '../../routes/app_routes.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('[BACKGROUND] Payload: ${message.data}');
+  debugPrint('[BACKGROUND] Payload: ${message.data}');
 }
 
 class NotificationService {
@@ -25,7 +26,7 @@ class NotificationService {
     // Permission
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
-    print('FCM TOKEN: ${await _fcm.getToken()}');
+    debugPrint('FCM TOKEN: ${await _fcm.getToken()}');
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidInit);
@@ -36,8 +37,8 @@ class NotificationService {
         final payload = response.payload;
         final notificationResponse = response;
 
-        print('Local notification tapped. Payload: $payload');
-        print('Notification id: ${notificationResponse.id}');
+        debugPrint('Local notification tapped. Payload: $payload');
+        debugPrint('Notification id: ${notificationResponse.id}');
 
         // Route based on channel id
         // foreground_channel → Go to Home (no payload routing)
@@ -47,7 +48,9 @@ class NotificationService {
           Get.toNamed(AppRoutes.hiveProducts, arguments: payload);
         } else {
           // For foreground_channel notifications (no productId) or other cases
-          print('No payload or foreground channel - staying on current page');
+          debugPrint(
+            'No payload or foreground channel - staying on current page',
+          );
         }
       },
     );
@@ -59,17 +62,17 @@ class NotificationService {
 
     // BACKGROUND (user taps notification while app in background)
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      print('[BACKGROUND MESSAGE] Received: ${message.data}');
+      debugPrint('[BACKGROUND MESSAGE] Received: ${message.data}');
 
       final pid = message.data['productId'];
       final androidChannelId = message.data['android_channel_id'] ?? '';
 
-      print('Android channel id from data: $androidChannelId');
-      print('Product id: $pid');
+      debugPrint('Android channel id from data: $androidChannelId');
+      debugPrint('Product id: $pid');
 
       // If foreground_channel: don't navigate (just open app to current page)
       if (androidChannelId.contains('foreground_channel')) {
-        print('foreground_channel detected - no navigation');
+        debugPrint('foreground_channel detected - no navigation');
         return;
       }
 
@@ -79,7 +82,9 @@ class NotificationService {
         try {
           Get.toNamed(AppRoutes.hiveProducts, arguments: pid);
         } catch (_) {
-          print('Navigation deferred; NotificationController will handle it.');
+          debugPrint(
+            'Navigation deferred; NotificationController will handle it.',
+          );
         }
       }
     });
@@ -119,20 +124,20 @@ class NotificationService {
     try {
       await androidPlugin?.deleteNotificationChannel(_foregroundChannelId);
       await androidPlugin?.deleteNotificationChannel(_lowStockChannelId);
-      print('Existing notification channels deleted (dev).');
+      debugPrint('Existing notification channels deleted (dev).');
     } catch (e) {
-      print('No existing channels to delete or deletion failed: $e');
+      debugPrint('No existing channels to delete or deletion failed: $e');
     }
 
     await androidPlugin?.createNotificationChannel(foregroundChannel);
     await androidPlugin?.createNotificationChannel(lowStockChannel);
-    print(
+    debugPrint(
       'Notification channels created: $_foregroundChannelId, $_lowStockChannelId',
     );
   }
 
   static Future<void> _onForegroundMessage(RemoteMessage message) async {
-    print('[FOREGROUND] Payload: ${jsonEncode(message.data)}');
+    debugPrint('[FOREGROUND] Payload: ${jsonEncode(message.data)}');
 
     final notification = message.notification;
     if (notification == null) return;
@@ -149,7 +154,7 @@ class NotificationService {
     const details = NotificationDetails(android: androidDetails);
 
     try {
-      print(
+      debugPrint(
         'Showing local notification with custom sound (foreground_channel).',
       );
       // Foreground channel notifications: NO payload (so tapping won't navigate)
@@ -161,9 +166,9 @@ class NotificationService {
         payload:
             null, // No payload for foreground_channel = stay on current page
       );
-      print('Foreground notification shown.');
+      debugPrint('Foreground notification shown.');
     } catch (e) {
-      print('Failed to show foreground notification: $e');
+      debugPrint('Failed to show foreground notification: $e');
     }
   }
 
@@ -172,7 +177,7 @@ class NotificationService {
     required String title,
     required int stock,
   }) async {
-    print('LOW STOCK → $title ($stock)');
+    debugPrint('LOW STOCK → $title ($stock)');
 
     const androidDetails = AndroidNotificationDetails(
       _lowStockChannelId,
@@ -216,18 +221,18 @@ class NotificationService {
       final shouldShow = (currentStock < threshold) && (lastStock >= threshold);
 
       if (shouldShow) {
-        print(
+        debugPrint(
           'Low stock alert TRIGGERED for $productId (was $lastStock, now $currentStock)',
         );
       } else {
-        print(
+        debugPrint(
           'Low stock alert SKIPPED for $productId (was $lastStock, now $currentStock)',
         );
       }
 
       return shouldShow;
     } catch (e) {
-      print('Error checking low stock: $e');
+      debugPrint('Error checking low stock: $e');
       return false;
     }
   }

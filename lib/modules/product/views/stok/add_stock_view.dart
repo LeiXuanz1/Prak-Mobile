@@ -54,7 +54,7 @@ class _AddStockViewState extends State<AddStockView> {
       // Normalize unit value to match dropdown items
       _unit = _normalizeUnit(edit.unit);
       _priceCtrl.text = edit.price.toString();
-      _descCtrl.text = edit.description;
+      _descCtrl.text = edit.description ?? '';
 
       if (edit.thumbnail != null && File(edit.thumbnail!).existsSync()) {
         _selectedImageFile = File(edit.thumbnail!);
@@ -100,6 +100,7 @@ class _AddStockViewState extends State<AddStockView> {
       price: double.tryParse(_priceCtrl.text) ?? 0,
       description: _descCtrl.text.trim(),
       thumbnail: _selectedImageFile?.path ?? widget.productToEdit?.thumbnail,
+      packaging: widget.productToEdit?.packaging ?? 'Bottle',
 
       source: 'local',
       status: int.parse(_stockCtrl.text) > 20 ? 'Available' : 'Low Stock',
@@ -201,7 +202,7 @@ class _AddStockViewState extends State<AddStockView> {
       child: Container(
         height: 160,
         decoration: BoxDecoration(
-          color: cs.surfaceVariant,
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
         child: _selectedImageFile == null
@@ -239,7 +240,7 @@ class _AddStockViewState extends State<AddStockView> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
-        value: _category,
+        initialValue: _category,
         decoration: const InputDecoration(labelText: 'Category'),
         items: const [
           DropdownMenuItem(value: 'General', child: Text('General')),
@@ -266,7 +267,7 @@ class _AddStockViewState extends State<AddStockView> {
         const SizedBox(width: 12),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _unit, // ← Use _unit instead of _unitCtrl.text
+            initialValue: _unit, // ← Use _unit instead of _unitCtrl.text
             decoration: const InputDecoration(labelText: 'Unit'),
             items: const [
               DropdownMenuItem(value: 'Units', child: Text('Units')),

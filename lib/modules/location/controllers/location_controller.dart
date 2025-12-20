@@ -86,7 +86,9 @@ class LocationController extends GetxController {
 
     final loc = currentLocation.value!;
 
-    print("GPS result: ${loc.latitude}, ${loc.longitude}, acc=${loc.accuracy}");
+    debugPrint(
+      "GPS result: ${loc.latitude}, ${loc.longitude}, acc=${loc.accuracy}",
+    );
 
     moveTo(loc.latitude, loc.longitude);
   }
@@ -133,7 +135,7 @@ class LocationController extends GetxController {
 
   Future<void> detectBestLocationSource() async {
     final systemLocationOn = await service.isSystemLocationEnabled();
-    print("System location enabled? $systemLocationOn");
+    debugPrint("System location enabled? $systemLocationOn");
 
     if (!systemLocationOn) {
       Get.snackbar(
@@ -144,35 +146,35 @@ class LocationController extends GetxController {
     }
 
     final gpsPerm = await service.checkPermissionGPS();
-    print("GPS Permission: $gpsPerm");
+    debugPrint("GPS Permission: $gpsPerm");
 
     if (gpsPerm) {
       try {
-        print("Trying GPS...");
+        debugPrint("Trying GPS...");
         await getGPSLocation();
-        print("GPS OK");
+        debugPrint("GPS OK");
         return;
       } catch (e) {
-        print("GPS FAILED: $e");
+        debugPrint("GPS FAILED: $e");
       }
     }
 
     // FALLBACK ke network
     final netPerm = await service.checkPermissionNetwork();
-    print("Network Permission: $netPerm");
+    debugPrint("Network Permission: $netPerm");
 
     if (netPerm) {
       try {
-        print("Trying NETWORK...");
+        debugPrint("Trying NETWORK...");
         await getNetworkLocation();
-        print("NETWORK OK");
+        debugPrint("NETWORK OK");
         return;
       } catch (e) {
-        print("NETWORK FAILED: $e");
+        debugPrint("NETWORK FAILED: $e");
       }
     }
 
-    print("NO LOCATION AVAILABLE");
+    debugPrint("NO LOCATION AVAILABLE");
     Get.snackbar(
       "Location Disabled",
       "Both GPS and Network unavailable. Please enable location",
