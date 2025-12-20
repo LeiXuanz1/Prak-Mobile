@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import '../hive_boxes.dart';
 import '../hive_models/product_hive_model.dart';
@@ -66,14 +67,17 @@ class HiveProductController extends GetxController {
   }
 
   // TAMBAH PRODUK
-  Future<void> addProduct(ProductHiveModel product) async {
+  Future<void> addProduct(
+    ProductHiveModel product, {
+    String source = 'lokal',
+  }) async {
     final box = HiveBoxes.products;
     await box.put(product.id, product);
 
     // reload list
     loadProducts();
 
-    _trySync();
+    _trySyncDebounce();
 
     // Add a recent activity
     try {
@@ -86,6 +90,10 @@ class HiveProductController extends GetxController {
         'timestamp': DateTime.now().toIso8601String(),
       });
     } catch (_) {}
+
+    if (source != 'supabase') {
+      _trySyncDebounce();
+    }
   }
 
   // HAPUS PRODUK
@@ -108,12 +116,13 @@ class HiveProductController extends GetxController {
       updatedAt: DateTime.now(),
       isSynced: false,
       isDeleted: true,
+      packaging: old.packaging,
     );
 
     await box.put(id, deleted);
 
     loadProducts();
-    _trySync();
+    _trySyncDebounce();
   }
 
   // UPDATE PRODUK
@@ -134,12 +143,13 @@ class HiveProductController extends GetxController {
       updatedAt: DateTime.now(),
       isSynced: false,
       isDeleted: false,
+      packaging: product.packaging,
     );
 
     await box.put(id, updated);
 
     loadProducts();
-    _trySync();
+    _trySyncDebounce();
 
     // Log recent activity for update
     try {
@@ -179,12 +189,27 @@ class HiveProductController extends GetxController {
         .toList();
   }
 
-  Future<void> _trySync() async {
+  Timer? _syncTimer;
+
+  void _trySyncDebounce({String source = 'local'}) {
+    if (source == 'supabase') return;
+
+    _syncTimer?.cancel();
+    _syncTimer = Timer(const Duration(seconds: 2), () {
+      _runSyncSafely();
+    });
+  }
+
+  Future<void> _runSyncSafely() async {
     try {
       final online = await ConnectivityService.isOnline();
-      if (online) {
-        await ProductSyncService.sync();
-      }
-    } catch (_) {}
+      if (!online) return;
+
+      await ProductSyncService.sync();
+    } catch (e, s) {
+      print('SYNC ERROR');
+      print(e);
+      print(s);
+    }
   }
 }

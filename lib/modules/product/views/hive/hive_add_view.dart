@@ -7,6 +7,6 @@ class HiveAddView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use AddStockView as the single combined add/edit view
-    return const AddStockView();
+    return AddStockView();
   }
 }

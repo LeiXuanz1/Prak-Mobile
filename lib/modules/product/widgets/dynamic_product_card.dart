@@ -14,8 +14,11 @@ class DynamicProductCard extends StatelessWidget {
     this.compact = false,
   });
 
-  Widget _resolveImage(String? path,
-      {BoxFit fit = BoxFit.cover, bool small = false}) {
+  Widget _resolveImage(
+    String? path, {
+    BoxFit fit = BoxFit.cover,
+    bool small = false,
+  }) {
     if (path == null || path.isEmpty) {
       return small ? _buildSmallPlaceholder() : _buildPlaceholder();
     }
@@ -44,7 +47,6 @@ class DynamicProductCard extends StatelessWidget {
     return small ? _buildSmallPlaceholder() : _buildPlaceholder();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final imagePath = _extractImageUrl();
@@ -69,10 +71,7 @@ class DynamicProductCard extends StatelessWidget {
                   child: SizedBox(
                     width: 72,
                     height: 72,
-                    child: _resolveImage(
-                      imagePath,
-                      small: true,
-                    ),          
+                    child: _resolveImage(imagePath, small: true),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -159,10 +158,7 @@ class DynamicProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _resolveImage(imagePath),
-            ),
+            AspectRatio(aspectRatio: 16 / 9, child: _resolveImage(imagePath)),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
