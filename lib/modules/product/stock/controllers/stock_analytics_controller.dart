@@ -71,6 +71,7 @@ class StockAnalyticsController extends GetxController {
 
       // 1. Stock Movement Chart (line chart data)
       // Hanya tampilkan produk yang punya transaksi di rentang tanggal
+      // Filter berdasarkan pIn dan pOut bukan stock saat ini
       List<ChartDataPoint> movementData = [];
       for (var product in products) {
         int pIn = stockInList
