@@ -26,11 +26,8 @@ class HomeView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
@@ -73,10 +70,11 @@ class HomeView extends StatelessWidget {
             }
           },
         ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.to(() => const HiveAddView()),
         tooltip: 'Tambah Produk',
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

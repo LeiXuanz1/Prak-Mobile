@@ -149,6 +149,8 @@ class ContactCardView extends StatelessWidget {
         onPressed: () {
           Get.to(() => AddContactView());
         },
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
     );

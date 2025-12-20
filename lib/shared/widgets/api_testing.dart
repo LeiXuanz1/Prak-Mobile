@@ -4,7 +4,11 @@ import '../../modules/apify/controllers/apify_controller.dart';
 
 class APITestingSection extends StatelessWidget {
   final ApifyController controller;
-  const APITestingSection({super.key, required this.controller});
+
+  const APITestingSection({
+    super.key,
+    required this.controller,
+  });
 
   Widget _apiButton({
     required BuildContext context,
@@ -25,7 +29,8 @@ class APITestingSection extends StatelessWidget {
             )
           : null,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (isLoading)
             const SizedBox(
@@ -35,8 +40,18 @@ class APITestingSection extends StatelessWidget {
             )
           else
             Icon(icon, size: 18),
+
           const SizedBox(width: 8),
-          Text(isLoading ? 'Loading…' : label),
+
+          /// 🔥 FIX OVERFLOW
+          Flexible(
+            child: Text(
+              isLoading ? 'Loading…' : label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       ),
     );
@@ -65,40 +80,28 @@ class APITestingSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Row(
                 children: [
-                  _apiButton(
-                    context: context,
-                    label: 'HTTP Request',
-                    icon: Icons.api_outlined,
-                    isLoading: controller.loading.value &&
-                        controller.testMode.value == 'async',
-                    onPressed: controller.runComparisonAsync,
+                  Expanded(
+                    child: _apiButton(
+                      context: context,
+                      label: 'HTTP Request',
+                      icon: Icons.api_outlined,
+                      isLoading: controller.loading.value &&
+                          controller.testMode.value == 'async',
+                      onPressed: controller.runComparisonAsync,
+                    ),
                   ),
-                  _apiButton(
-                    context: context,
-                    label: 'Dio Request',
-                    icon: Icons.cloud_outlined,
-                    isLoading: controller.loading.value &&
-                        controller.testMode.value == 'callback',
-                    onPressed: controller.runComparisonCallback,
-                  ),
-                  _apiButton(
-                    context: context,
-                    label: 'Clear Logs',
-                    icon: Icons.delete_outline,
-                    destructive: true,
-                    isLoading: false,
-                    onPressed: () {
-                      controller.logs.clear();
-                      Get.snackbar(
-                        'Success',
-                        'Logs cleared',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
-                    },
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _apiButton(
+                      context: context,
+                      label: 'Dio Request',
+                      icon: Icons.cloud_outlined,
+                      isLoading: controller.loading.value &&
+                          controller.testMode.value == 'callback',
+                      onPressed: controller.runComparisonCallback,
+                    ),
                   ),
                 ],
               ),
