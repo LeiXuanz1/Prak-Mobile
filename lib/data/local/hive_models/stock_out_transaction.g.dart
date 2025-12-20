@@ -29,13 +29,14 @@ class StockOutTransactionAdapter extends TypeAdapter<StockOutTransaction> {
       stockBefore: fields[9] as int,
       stockAfter: fields[10] as int,
       category: fields[11] as String,
+      contactName: fields[12] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, StockOutTransaction obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class StockOutTransactionAdapter extends TypeAdapter<StockOutTransaction> {
       ..writeByte(10)
       ..write(obj.stockAfter)
       ..writeByte(11)
-      ..write(obj.category);
+      ..write(obj.category)
+      ..writeByte(12)
+      ..write(obj.contactName);
   }
 
   @override

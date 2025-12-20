@@ -13,15 +13,10 @@ class ProductCatalogSection extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.inventory_2_outlined, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -43,10 +38,7 @@ class ProductCatalogSection extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );
@@ -60,10 +52,7 @@ class ProductCatalogSection extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: theme.textTheme.labelMedium,
-          ),
+          Text(label, style: theme.textTheme.labelMedium),
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -91,9 +80,7 @@ class ProductCatalogSection extends StatelessWidget {
       return Card(
         elevation: 0,
         color: theme.colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -167,23 +154,35 @@ class ProductCatalogSection extends StatelessWidget {
                   ),
                 )
               else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final map = products[index];
-                    return DynamicProductCard(
-                      data: map,
-                      compact: false,
-                      onTap: () => _showProductDetail(context, map),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount;
+                    double width = constraints.maxWidth;
+                    if (width < 600) {
+                      crossAxisCount = 2; // Mobile
+                    } else if (width < 1024) {
+                      crossAxisCount = 3; // Tablet
+                    } else {
+                      crossAxisCount = 4; // Laptop/PC
+                    }
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.75,
+                      ),
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final map = products[index];
+                        return DynamicProductCard(
+                          data: map,
+                          compact: false,
+                          onTap: () => _showProductDetail(context, map),
+                        );
+                      },
                     );
                   },
                 ),
