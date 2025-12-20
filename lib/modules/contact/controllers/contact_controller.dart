@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import '../../../data/local/hive_boxes.dart';
-import '../../../data/local/models/contact_hive_model.dart';
+import '../../../data/local/hive_models/contact_hive_model.dart';
 
 class ContactController extends GetxController {
   final contacts = <ContactHiveModel>[].obs;

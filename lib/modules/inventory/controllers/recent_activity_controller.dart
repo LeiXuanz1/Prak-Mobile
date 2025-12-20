@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import '../../../data/local/hive_boxes.dart';
-import '../../../data/local/models/stock_in_transaction.dart';
-import '../../../data/local/models/stock_out_transaction.dart';
+import '../../../data/local/hive_models/stock_in_transaction.dart';
+import '../../../data/local/hive_models/stock_out_transaction.dart';
 
 class RecentActivityController extends GetxController {
   final selectedTab = Rx<int>(0); // 0: All, 1: Stok Masuk, 2: Stok Keluar

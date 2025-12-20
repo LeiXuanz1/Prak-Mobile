@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../../data/local/models/stock_in_transaction.dart';
-import '../../../data/local/models/stock_out_transaction.dart';
+import '../../../data/local/hive_models/stock_in_transaction.dart';
+import '../../../data/local/hive_models/stock_out_transaction.dart';
 import '../models/period_filter.dart';
 
 class InventoryOverviewController extends GetxController {

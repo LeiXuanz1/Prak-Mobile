@@ -4,7 +4,7 @@ import '../controllers/contact_controller.dart';
 import '../../location/views/location_view.dart';
 import '../../location/controllers/location_controller.dart';
 import '../../location/controllers/location_permission_controller.dart';
-import '../../../data/local/models/contact_hive_model.dart';
+import '../../../data/local/hive_models/contact_hive_model.dart';
 import '../../location/models/location_model.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -30,20 +30,22 @@ class AddContactView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Populate form if editing
-    if (editingContact != null) {
-      nameController.text = editingContact!.name;
-      phoneController.text = editingContact!.phone ?? '';
-      emailController.text = editingContact!.email ?? '';
-      addressController.text = editingContact!.address ?? '';
-      if (editingContact!.latitude != null &&
-          editingContact!.longitude != null) {
-        selectedLatitude.value = editingContact!.latitude;
-        selectedLongitude.value = editingContact!.longitude;
-        selectedLocationLabel.value = editingContact!.locationLabel;
-        hasLocation.value = true;
+    // Populate form if editing (only once)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (editingContact != null) {
+        nameController.text = editingContact!.name;
+        phoneController.text = editingContact!.phone ?? '';
+        emailController.text = editingContact!.email ?? '';
+        addressController.text = editingContact!.address;
+        if (editingContact!.latitude != null &&
+            editingContact!.longitude != null) {
+          selectedLatitude.value = editingContact!.latitude;
+          selectedLongitude.value = editingContact!.longitude;
+          selectedLocationLabel.value = editingContact!.locationLabel;
+          hasLocation.value = true;
+        }
       }
-    }
+    });
 
     return Scaffold(
       appBar: AppBar(

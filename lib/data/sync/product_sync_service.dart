@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:my_app/utils/thumbnail_helper.dart';
 import '../local/hive_boxes.dart';
 import '../local/hive_models/product_hive_model.dart';
@@ -23,8 +22,7 @@ class ProductSyncService {
     print('SYNC END');
   }
 
-  static bool isUuid(String v) =>
-    RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(v);
+  static bool isUuid(String v) => RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(v);
 
   // PUSH LOCAL → SUPABASE
   static Future<void> _pushLocalToSupabase() async {
@@ -58,29 +56,19 @@ class ProductSyncService {
 
         final res = await SupabaseService.client
             .from('soy_sauces')
-            .upsert(product.toSupabase(), onConflict: 'id',
-            )
+            .upsert(product.toSupabase(), onConflict: 'id')
             .select();
 
         print('SUPABASE UPSERT RESULT: ${res}');
 
-        final synced = product.copyWith(
-          isSynced: true,
-          updatedAt: DateTime.now(),
-        );
-
         await box.put(
           product.id,
-          product.copyWith(
-            isSynced: true,
-            updatedAt: DateTime.now(),
-          ),
+          product.copyWith(isSynced: true, updatedAt: DateTime.now()),
         );
-
       } catch (e, stack) {
-          print('SUPABASE ERROR FOR ${product.id}');
-          print(e);
-          print(stack);
+        print('SUPABASE ERROR FOR ${product.id}');
+        print(e);
+        print(stack);
       }
     }
   }

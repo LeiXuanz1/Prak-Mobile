@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../data/local/models/stock_in_transaction.dart';
-import '../../../data/local/models/stock_out_transaction.dart';
+import '../../../data/local/hive_models/stock_in_transaction.dart';
+import '../../../data/local/hive_models/stock_out_transaction.dart';
 import '../controllers/recent_activity_controller.dart';
 
 class RecentActivityView extends StatelessWidget {

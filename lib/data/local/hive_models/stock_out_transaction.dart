@@ -40,6 +40,9 @@ class StockOutTransaction {
   @HiveField(11)
   final String category;
 
+  @HiveField(12)
+  final String? contactName;
+
   StockOutTransaction({
     required this.id,
     required this.productId,
@@ -53,6 +56,7 @@ class StockOutTransaction {
     required this.stockBefore,
     required this.stockAfter,
     required this.category,
+    this.contactName,
   });
 
   Map<String, dynamic> toMap() {
@@ -69,6 +73,7 @@ class StockOutTransaction {
       'stockBefore': stockBefore,
       'stockAfter': stockAfter,
       'category': category,
+      'contactName': contactName,
     };
   }
 }

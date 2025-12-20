@@ -1,8 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'hive_models/product_hive_model.dart';
-import 'models/stock_in_transaction.dart';
-import 'models/stock_out_transaction.dart';
-import 'models/contact_hive_model.dart';
+import 'hive_models/stock_in_transaction.dart';
+import 'hive_models/stock_out_transaction.dart';
+import 'hive_models/contact_hive_model.dart';
 
 class HiveBoxes {
   static const String productBox = 'product_box';
