@@ -16,9 +16,9 @@ import '../../product/views/hive/hive_add_view.dart';
 import '../../contact/views/contact_card_view.dart';
 
 class HomeView extends StatelessWidget {
-  final ApifyController controller = Get.find<ApifyController>();
-
   HomeView({super.key});
+
+  final ApifyController controller = Get.find<ApifyController>();
 
   @override
   Widget build(BuildContext context) {
@@ -28,51 +28,48 @@ class HomeView extends StatelessWidget {
       backgroundColor: theme.colorScheme.surface,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_bag_outlined),
-              label: 'Barang',
-            ),
-            BottomNavigationBarItem(
-              icon: SizedBox.shrink(), // Space for FAB
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'Riwayat',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.contacts),
-              label: 'Kontak',
-            ),
-          ],
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                // Stay on Home
-                break;
-              case 1:
-                Get.to(() => BarangView());
-                break;
-              case 2:
-                // Skip FAB center
-                break;
-              case 3:
-                Get.to(() => RecentActivityView());
-                break;
-              case 4:
-                Get.to(() => ContactCardView());
-                break;
-            }
-          },
-        ),
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              Get.to(() => BarangView());
+              break;
+            case 3:
+              Get.to(() => RecentActivityView());
+              break;
+            case 4:
+              Get.to(() => ContactCardView());
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag_outlined),
+            label: 'Barang',
+          ),
+          BottomNavigationBarItem(
+            icon: SizedBox.shrink(),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Riwayat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contacts),
+            label: 'Kontak',
+          ),
+        ],
+      ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.to(() => const HiveAddView()),
-        tooltip: 'Tambah Produk',
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         child: const Icon(Icons.add),
@@ -82,61 +79,90 @@ class HomeView extends StatelessWidget {
         slivers: [
           KecapAppBar(controller: controller),
 
-          // CONTENT
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // WELCOME
-                WelcomeCard(),
-                const SizedBox(height: 24),
+              delegate: SliverChildListDelegate(
+                [
+                  const WelcomeCard(),
+                  const SizedBox(height: 24),
 
-                // INVENTORY OVERVIEW
-                const InventoryOverviewWidget(),
-                const SizedBox(height: 32),
+                  const InventoryOverviewWidget(),
+                  const SizedBox(height: 32),
 
-                // FEATURE CARDS (3x2 Grid)
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.0,
-                  children: [
-                    _FeatureCard(
-                      icon: Icons.arrow_downward,
-                      label: 'Stok Masuk',
-                      color: Colors.green,
-                      onTap: () => Get.to(() => const StockInView()),
-                    ),
-                    _FeatureCard(
-                      icon: Icons.arrow_upward,
-                      label: 'Stok Keluar',
-                      color: Colors.red,
-                      onTap: () => Get.to(() => const StockOutView()),
-                    ),
-                    _FeatureCard(
-                      icon: Icons.receipt_long,
-                      label: 'Laporan Stok',
-                      color: Colors.blue,
-                      onTap: () => Get.to(() => StockReportView()),
-                    ),
-                    _FeatureCard(
-                      icon: Icons.analytics_outlined,
-                      label: 'Analitik',
-                      color: Colors.purple,
-                      onTap: () => Get.to(() => StockAnalyticsView()),
-                    ),
-                  ],
-                ),
-              ]),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      if (width >= 1000) {
+                        return Row(
+                          children: [
+                            Expanded(child: _stokMasuk()),
+                            const SizedBox(width: 16),
+                            Expanded(child: _stokKeluar()),
+                            const SizedBox(width: 16),
+                            Expanded(child: _laporan()),
+                            const SizedBox(width: 16),
+                            Expanded(child: _analitik()),
+                          ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: _stokMasuk()),
+                              const SizedBox(width: 16),
+                              Expanded(child: _stokKeluar()),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(child: _laporan()),
+                              const SizedBox(width: 16),
+                              Expanded(child: _analitik()),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _stokMasuk() => _FeatureCard(
+        icon: Icons.arrow_downward,
+        label: 'Stok Masuk',
+        color: Colors.green,
+        onTap: () => Get.to(() => const StockInView()),
+      );
+
+  Widget _stokKeluar() => _FeatureCard(
+        icon: Icons.arrow_upward,
+        label: 'Stok Keluar',
+        color: Colors.red,
+        onTap: () => Get.to(() => const StockOutView()),
+      );
+
+  Widget _laporan() => _FeatureCard(
+        icon: Icons.receipt_long,
+        label: 'Laporan Stok',
+        color: Colors.blue,
+        onTap: () => Get.to(() => StockReportView()),
+      );
+
+  Widget _analitik() => _FeatureCard(
+        icon: Icons.analytics_outlined,
+        label: 'Analitik',
+        color: Colors.purple,
+        onTap: () => Get.to(() => StockAnalyticsView()),
+      );
 }
 
 class _FeatureCard extends StatelessWidget {
@@ -154,45 +180,48 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+    final theme = Theme.of(context);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 140, 
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                height: 1.2,
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: color, size: 32),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 14),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
