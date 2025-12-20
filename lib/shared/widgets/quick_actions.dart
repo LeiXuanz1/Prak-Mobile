@@ -70,7 +70,7 @@ class QuickActions extends StatelessWidget {
           context,
           icon: Icons.add_circle_outline,
           label: 'Add Product',
-          onTap: () => Get.to(() => const AddStockView()),
+          onTap: () => Get.to(() => AddStockView()),
         ),
         _actionCard(context, icon: Icons.search, label: 'Search', onTap: () {}),
         _actionCard(

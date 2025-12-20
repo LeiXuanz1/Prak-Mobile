@@ -1,4 +1,5 @@
-import 'dart:developer';
+import 'dart:io';
+
 import 'package:my_app/utils/thumbnail_helper.dart';
 import '../local/hive_boxes.dart';
 import '../local/hive_models/product_hive_model.dart';
@@ -6,6 +7,8 @@ import '../cloud/supabase_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductSyncService {
+  static bool _isSyncing = false;
+
   static Future<void> sync() async {
     final user = SupabaseService.client.auth.currentUser;
     final session = Supabase.instance.client.auth.currentSession;
@@ -17,14 +20,28 @@ class ProductSyncService {
       return;
     }
 
-    print('SYNC START');
-    await _pushLocalToSupabase();
-    await _pullSupabaseToLocal();
-    print('SYNC END');
+    if (_isSyncing) {
+      print('SYNCING SKIPPED: already syncing');
+      return;
+    }
+
+    _isSyncing = true;
+
+    try {
+      print('SYNC START');
+      await _pushLocalToSupabase();
+      await _pullSupabaseToLocal();
+      print('SYNC END');
+    } catch (e, s) {
+      print('SYNC ERROR');
+      print(e);
+      print(s);
+    } finally {
+      _isSyncing = false;
+    }
   }
 
-  static bool isUuid(String v) =>
-    RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(v);
+  static bool isUuid(String v) => RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(v);
 
   // PUSH LOCAL → SUPABASE
   static Future<void> _pushLocalToSupabase() async {
@@ -47,40 +64,46 @@ class ProductSyncService {
             continue;
           }
 
-          await SupabaseService.client
+          final res = await SupabaseService.client
               .from('soy_sauces')
               .delete()
-              .eq('id', product.id);
+              .eq('id', product.id)
+              .select();
+
+          print('SUPABASE DELETE RESULT: $res');
 
           await box.delete(product.id);
           continue;
         }
 
+        final uploadedThumbnail = await _uploadLocalThumbnailIdNeeded(
+          product.thumbnail,
+        );
+
         final res = await SupabaseService.client
             .from('soy_sauces')
-            .upsert(product.toSupabase(), onConflict: 'id',
+            .upsert(
+              product.copyWith(
+                thumbnail: uploadedThumbnail,
+              ).toSupabase(),
+              onConflict: 'id',
             )
             .select();
 
         print('SUPABASE UPSERT RESULT: ${res}');
 
-        final synced = product.copyWith(
-          isSynced: true,
-          updatedAt: DateTime.now(),
-        );
-
         await box.put(
           product.id,
           product.copyWith(
+            thumbnail: uploadedThumbnail,
             isSynced: true,
             updatedAt: DateTime.now(),
           ),
         );
-
       } catch (e, stack) {
-          print('SUPABASE ERROR FOR ${product.id}');
-          print(e);
-          print(stack);
+        print('SUPABASE ERROR FOR ${product.id}');
+        print(e);
+        print(stack);
       }
     }
   }
@@ -134,13 +157,15 @@ class ProductSyncService {
         category: map['category'] ?? local.category,
         price: (map['price'] as num?)?.toDouble() ?? local.price,
         unit: map['unit_size']?.toString() ?? local.unit,
+        description: map['description'] ?? local.description,
+        packaging: map['packaging'] ?? local.packaging,
         thumbnail: finalThumbnail,
         updatedAt: remoteUpdated,
         isSynced: true,
         source: 'supabase',
       );
 
-      await box.put(id, merged);
+      await box.put(id, merged.copyWith(source: 'supabase'));
     }
   }
 
@@ -159,6 +184,36 @@ class ProductSyncService {
       status: 'active',
       updatedAt: DateTime.parse(map['updated_at']),
       isSynced: true,
+      packaging: map['packaging'] ?? '',
     );
+  }
+
+  static Future<String?> _uploadLocalThumbnailIdNeeded(
+    dynamic thumbnail,
+  ) async {
+    if (thumbnail == null) return null;
+
+    final raw = thumbnail.toString().trim();
+
+    if (raw.startsWith('soy_sauces/') || raw.startsWith('http')) {
+      return raw;
+    }
+
+    if (!raw.startsWith('/')) return null;
+
+    final file = File(raw);
+    if (!file.existsSync()) return null;
+
+    final ext = raw.split('.').last;
+    final name = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final storagePath = 'soy_sauces/$name';
+
+    final bytes = await file.readAsBytes();
+
+    await SupabaseService.client.storage
+        .from('kecap-images')
+        .uploadBinary(storagePath, bytes);
+
+    return storagePath;
   }
 }

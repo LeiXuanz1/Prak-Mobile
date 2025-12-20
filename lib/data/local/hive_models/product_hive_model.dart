@@ -22,7 +22,7 @@ class ProductHiveModel {
   final double price;
 
   @HiveField(6)
-  final String description;
+  final String? description;
 
   @HiveField(7)
   final dynamic thumbnail;
@@ -42,6 +42,9 @@ class ProductHiveModel {
   @HiveField(12)
   final bool isDeleted;
 
+  @HiveField(13)
+  final String packaging;
+
   ProductHiveModel({
     required this.id,
     required this.title,
@@ -56,6 +59,7 @@ class ProductHiveModel {
     required this.updatedAt,
     this.isSynced = false,
     this.isDeleted = false,
+    required this.packaging,
   });
 
   Map<String, dynamic> toMap() {
@@ -67,6 +71,7 @@ class ProductHiveModel {
       "unit": unit,
       "price": price,
       "description": description,
+      "packaging": packaging,
       "thumbnail": thumbnail,
       "source": source,
       "status": status,
@@ -74,35 +79,42 @@ class ProductHiveModel {
   }
 
   Map<String, dynamic> toSupabase() {
+    final raw = thumbnail?.toString().trim();
+
+    final safeThumbnail = (raw != null && raw.startsWith('/')) ? null : raw;
+
     return {
       'id': id,
       'display_name': title,
       'category': category,
+      'stock': stock,
       'price': price,
       'unit_size': unit.trim().toLowerCase(),
-      'thumbnail': thumbnail,
-      'packaging': description,
+      'thumbnail': safeThumbnail,
+      'description': description,
+      'packaging': packaging,
     };
   }
 }
 
 extension ProductHiveModelCopy on ProductHiveModel {
-    ProductHiveModel copyWith({
-      String? id,
-      String? title,
-      String? category,
-      int? stock,
-      String? unit,
-      double? price,
-      String? description,
-      dynamic thumbnail,
-      String? source,
-      String? status,
-      DateTime? updatedAt,
-      bool? isSynced,
-      bool? isDeleted,
-    }) {
-      return ProductHiveModel(
+  ProductHiveModel copyWith({
+    String? id,
+    String? title,
+    String? category,
+    int? stock,
+    String? unit,
+    double? price,
+    String? description,
+    String? packaging,
+    dynamic thumbnail,
+    String? source,
+    String? status,
+    DateTime? updatedAt,
+    bool? isSynced,
+    bool? isDeleted,
+  }) {
+    return ProductHiveModel(
       id: id ?? this.id,
       title: title ?? this.title,
       category: category ?? this.category,
@@ -110,12 +122,13 @@ extension ProductHiveModelCopy on ProductHiveModel {
       unit: unit ?? this.unit,
       price: price ?? this.price,
       description: description ?? this.description,
+      packaging: packaging ?? this.packaging,
       thumbnail: thumbnail ?? this.thumbnail,
       source: source ?? this.source,
       status: status ?? this.status,
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
       isDeleted: isDeleted ?? this.isDeleted,
-      );
-    }
+    );
   }
+}

@@ -196,18 +196,22 @@ class DynamicProductCard extends StatelessWidget {
                       const Spacer(),
 
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           if (price != null)
-                            Text(
+                          Expanded(
+                            child: Text(
                               price,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
-                          if (stock != null)
+                          ),
+                          if (stock != null) ... [
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -227,6 +231,7 @@ class DynamicProductCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                          ],
                         ],
                       ),
                   ],

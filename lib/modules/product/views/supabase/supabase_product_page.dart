@@ -12,19 +12,15 @@ class SupabaseProductPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Produk Supabase'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Produk Supabase'), centerTitle: true),
 
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator.adaptive(),
-          );
+          return const Center(child: CircularProgressIndicator.adaptive());
         }
 
         if (controller.products.isEmpty) {
@@ -35,17 +31,14 @@ class SupabaseProductPage extends StatelessWidget {
                 Icon(
                   Icons.inventory_2_outlined,
                   size: 72,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: cs.onSurfaceVariant,
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Belum ada produk',
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text('Belum ada produk', style: theme.titleMedium),
                 const SizedBox(height: 4),
                 Text(
                   'Tambahkan produk pertama ke Supabase',
-                  style: theme.textTheme.bodySmall,
+                  style: theme.bodySmall,
                 ),
               ],
             ),
@@ -61,7 +54,7 @@ class SupabaseProductPage extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               elevation: 0,
-              color: theme.colorScheme.surfaceContainerLow,
+              color: cs.surfaceContainerLow,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -72,7 +65,7 @@ class SupabaseProductPage extends StatelessWidget {
 
                 title: Text(
                   item['display_name'] ?? 'Tanpa nama',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -98,6 +91,8 @@ class SupabaseProductPage extends StatelessWidget {
         onPressed: () => Get.to(() => SupabaseAddView()),
         icon: const Icon(Icons.add),
         label: const Text('Tambah Produk'),
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
       ),
     );
   }
