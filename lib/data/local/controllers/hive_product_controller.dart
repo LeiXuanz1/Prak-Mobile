@@ -20,6 +20,10 @@ class HiveProductController extends GetxController {
   void onInit() {
     super.onInit();
     loadProducts();
+
+    HiveBoxes.products.watch().listen((_) {
+      loadProducts();
+    });
   }
 
   // LOAD PRODUK DARI HIVE

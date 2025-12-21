@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:my_app/data/local/controllers/hive_product_controller.dart';
+import 'package:my_app/data/sync/product_sync_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 
@@ -7,6 +9,7 @@ class AuthController extends GetxController {
 
   final isLoggedIn = false.obs;
   final isLoading = true.obs;
+  bool _initialSyncDone = false;
 
   final isPasswordVisible = false.obs;
   final emailError = RxnString();
@@ -21,11 +24,35 @@ class AuthController extends GetxController {
     _authService.onAuthStateChanged((session) async {
       print('AUTH EVENT: ${session != null}');
 
-      isLoggedIn.value = session != null;
-      isLoading.value = false;
+      if (session == null) {
+        _initialSyncDone = false;
+        isLoggedIn.value = false;
+        isLoading.value = false;
+        return;
+      }
 
-      if (session != null) {
+      if (_initialSyncDone) return;
+
+      _initialSyncDone = true;
+      isLoading.value = true;
+
+      try {
         await _authService.ensureProfile();
+
+        print('AUTH READY -> RUN INITIAL SYNC');
+        await ProductSyncService.sync();
+
+        if (Get.isRegistered<HiveProductController>()) {
+          Get.find<HiveProductController>().loadProducts();
+        }
+
+        isLoggedIn.value = true;
+      } catch (e, s) {
+        print('AUTH INIT ERROR');
+        print(e);
+        print(s);
+      } finally {
+        isLoading.value = false;
       }
     });
   }

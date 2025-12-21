@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/utils/thumbnail_helper.dart';
 import '../local/hive_boxes.dart';
 import '../local/hive_models/product_hive_model.dart';
@@ -9,13 +10,11 @@ class ProductSyncService {
   static bool _isSyncing = false;
 
   static Future<void> sync() async {
-    final user = SupabaseService.client.auth.currentUser;
-    final session = Supabase.instance.client.auth.currentSession;
-    print('AUTH USER: ${user?.id}');
-    print('SUPABASE SESSION: ${session?.user.id}');
+    final SupabaseClient client = Supabase.instance.client;
+    final Session? session = client.auth.currentSession;
 
-    if (!SupabaseService.isAuthenticated) {
-      print('SYNC ABORTED: not authenticated');
+    if (session == null) {
+      print('SYNC Skipped - session not ready');
       return;
     }
 
@@ -27,7 +26,7 @@ class ProductSyncService {
     _isSyncing = true;
 
     try {
-      print('SYNC START');
+      print('SYNC START user = ${session.user.id}');
       await _pushLocalToSupabase();
       await _pullSupabaseToLocal();
       print('SYNC END');

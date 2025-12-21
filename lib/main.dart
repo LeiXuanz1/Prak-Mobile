@@ -32,6 +32,9 @@ Future<void> main() async {
   Get.put(AuthController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
 
+  await Future.delayed(const Duration(milliseconds: 300));
+  await ProductSyncService.sync();
+
   ConnectivityService.listen(
     onOnline: () async {
       await ProductSyncService.sync();
