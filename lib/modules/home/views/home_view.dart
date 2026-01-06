@@ -10,10 +10,6 @@ import '../../product/views/stok/stock_in_view.dart';
 import '../../product/views/stok/stock_out_view.dart';
 import '../../product/views/stok/stock_report_view.dart';
 import '../../product/views/stok/stock_analytics_view.dart';
-import '../../product/views/barang_view.dart';
-import '../../product/views/recent_activity_view.dart';
-import '../../product/views/hive/hive_add_view.dart';
-import '../../contact/views/contact_card_view.dart';
 
 class HomeView extends StatelessWidget {
   HomeView({super.key});
@@ -22,117 +18,64 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break;
-            case 1:
-              Get.to(() => BarangView());
-              break;
-            case 3:
-              Get.to(() => RecentActivityView());
-              break;
-            case 4:
-              Get.to(() => ContactCardView());
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            label: 'Barang',
-          ),
-          BottomNavigationBarItem(
-            icon: SizedBox.shrink(),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contacts),
-            label: 'Kontak',
-          ),
-        ],
-      ),
+    return CustomScrollView(
+      slivers: [
+        KecapAppBar(controller: controller),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.to(() => const HiveAddView()),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      body: CustomScrollView(
-        slivers: [
-          KecapAppBar(controller: controller),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const WelcomeCard(),
+                const SizedBox(height: 24),
 
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const WelcomeCard(),
-                  const SizedBox(height: 24),
+                const InventoryOverviewWidget(),
+                const SizedBox(height: 32),
 
-                  const InventoryOverviewWidget(),
-                  const SizedBox(height: 32),
-
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      if (width >= 1000) {
-                        return Row(
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    if (width >= 1000) {
+                      return Row(
+                        children: [
+                          Expanded(child: _stokMasuk()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _stokKeluar()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _laporan()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _analitik()),
+                        ],
+                      );
+                    }
+                    return Column(
+                      children: [
+                        Row(
                           children: [
                             Expanded(child: _stokMasuk()),
                             const SizedBox(width: 16),
                             Expanded(child: _stokKeluar()),
-                            const SizedBox(width: 16),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
                             Expanded(child: _laporan()),
                             const SizedBox(width: 16),
                             Expanded(child: _analitik()),
                           ],
-                        );
-                      }
-                      return Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(child: _stokMasuk()),
-                              const SizedBox(width: 16),
-                              Expanded(child: _stokKeluar()),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(child: _laporan()),
-                              const SizedBox(width: 16),
-                              Expanded(child: _analitik()),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

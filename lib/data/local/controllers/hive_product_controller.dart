@@ -7,6 +7,8 @@ import '../../../core/services/notification_service.dart';
 import 'package:my_app/core/services/connectvity_service.dart';
 import 'package:my_app/data/sync/product_sync_service.dart';
 
+enum StockFilter { all, inStock, outOfStock }
+
 class HiveProductController extends GetxController {
   var products = <ProductHiveModel>[].obs;
   RxList<Map<String, dynamic>> apiProducts = <Map<String, dynamic>>[].obs;
@@ -48,8 +50,6 @@ class HiveProductController extends GetxController {
     loading.value = false;
   }
 
-  // Check if stock just dropped below threshold (first time).
-  // Only show notification if: current stock < threshold AND last known stock >= threshold
   Future<void> _checkAndShowLowStockAlert(
     String productId,
     String title,
@@ -215,5 +215,44 @@ class HiveProductController extends GetxController {
       print(e);
       print(s);
     }
+  }
+
+  final selectedCategory = ''.obs;
+  final stockFilter = StockFilter.all.obs;
+  final categories = <String>[].obs;
+
+  void setCategory(String value) {
+    selectedCategory.value = value;
+    applyFilter();
+  }
+
+  void setStockFilter(StockFilter value) {
+    stockFilter.value = value;
+    applyFilter();
+  }
+
+  void applyFilter() {
+    final query = searchQuery.value.toLowerCase();
+
+    filteredProducts.assignAll(
+      products
+          .where((p) {
+            final matchSearch = p.title.toLowerCase().contains(query);
+            final matchCategory =
+                selectedCategory.value.isEmpty ||
+                p.category == selectedCategory.value;
+
+            final matchStock = switch (stockFilter.value) {
+              StockFilter.all => true,
+              StockFilter.inStock => p.stock > 0,
+              StockFilter.outOfStock => p.stock == 0,
+            };
+
+            return matchSearch && matchCategory && matchStock;
+          })
+          .toList()
+          .map((p) => p.toMap())
+          .toList(),
+    );
   }
 }

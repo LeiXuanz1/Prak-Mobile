@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:my_app/core/bindings/location_binding.dart';
-import 'package:my_app/modules/home/views/home_view.dart';
+import 'package:my_app/modules/home/views/main_page.dart';
 import 'package:my_app/modules/location/views/location_view.dart';
 import 'package:my_app/routes/auth_middleware.dart';
 import '/core/bindings/apify_bindings.dart';
@@ -23,7 +23,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.home,
-      page: () => HomeView(),
+      page: () => MainPage(),
       ),
     GetPage(
       name: AppRoutes.apify,

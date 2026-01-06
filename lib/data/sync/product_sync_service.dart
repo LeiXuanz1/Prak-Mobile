@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:my_app/data/local/controllers/hive_product_controller.dart';
 import 'package:my_app/utils/thumbnail_helper.dart';
 import '../local/hive_boxes.dart';
 import '../local/hive_models/product_hive_model.dart';

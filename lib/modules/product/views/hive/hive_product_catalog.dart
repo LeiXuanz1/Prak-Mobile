@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:my_app/data/local/controllers/hive_product_controller.dart';
+import 'package:my_app/modules/product/views/hive/hive_filter.dart';
 import 'package:my_app/modules/product/widgets/dynamic_product_card.dart';
 import 'package:my_app/modules/apify/controllers/apify_controller.dart';
 import 'package:my_app/modules/product/views/stok/add_stock_view.dart';
@@ -106,10 +107,30 @@ class ProductCatalogSection extends StatelessWidget {
         children: [
           // SEARCH BAR - OUTSIDE CARD
           TextField(
-            onChanged: (v) => controller.searchQuery.value = v,
+            onChanged: (v) {
+              controller.searchQuery.value = v;
+              controller.applyFilter();
+            },
             decoration: InputDecoration(
               hintText: 'Search products',
               prefixIcon: const Icon(Icons.search),
+
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.tune),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (_) => Dialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: HiveFilter(controller: controller),
+                    ),
+                  );
+                },
+              ),
+
               filled: true,
               fillColor: cs.surfaceContainerHighest,
               border: OutlineInputBorder(
